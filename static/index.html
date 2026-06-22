@@ -380,6 +380,12 @@ function setStatus(text, busy = false) { $("status-text").textContent = text; $(
 // ===================== Model status API ==================================
 async function getStatus(model) { const r = await fetch("/model_status?model=" + encodeURIComponent(model)); if (!r.ok) throw new Error("status check failed"); return r.json(); }
 async function warmup(model) { const fd = new FormData(); fd.append("model", model); await fetch("/warmup", { method: "POST", body: fd }); }
+async function pinDefaultModel(model, warm) {
+  // Tells the server this is the active default; the server evicts any other
+  // loaded model from RAM so we don't pile up BiRefNet + ISNet + U2Net at once.
+  const fd = new FormData(); fd.append("model", model); if (warm) fd.append("warmup", "true");
+  try { await fetch("/set_default_model", { method: "POST", body: fd }); } catch {}
+}
 async function waitForModel(model, onTick) {
   let s = await getStatus(model); if (s.state === "ready") return s;
   await warmup(model);
@@ -404,7 +410,7 @@ function renderModelDropdown() {
     opt.className = "dd-opt" + (key === selectedModel ? " sel" : "") + (avail ? "" : " disabled");
     const na = avail ? "" : `<span class="o-na">Not downloaded</span>`;
     opt.innerHTML = `<span class="o-main"><span class="o-title">${info2.title}<span class="o-size">~${SIZES[key]} MB</span>${na}</span><span class="o-tag">${info2.tagline || ""}</span></span><span class="o-check">${ICON_CHECK}</span>`;
-    if (avail) opt.addEventListener("click", () => { selectedModel = key; closeDropdown(); renderModelDropdown(); });
+    if (avail) opt.addEventListener("click", () => { selectedModel = key; closeDropdown(); renderModelDropdown(); pinDefaultModel(key, false); });
     else opt.title = "Download it on the Models page first";
     menu.appendChild(opt);
   }
@@ -518,6 +524,8 @@ async function runJob(job) {
   if (st.state !== "ready") { job.state = "loading-model"; renderAll(); setStatus(`downloading ${job.model}…`, true); await waitForModel(job.model); }
   job.state = "processing"; renderAll(); setStatus("processing…", true);
   const fd = new FormData(); fd.append("image", job.file); fd.append("model", job.model);
+  // A one-off reprocess with a non-default model: keep the global pinned model alive.
+  if (job.transient || job.model !== selectedModel) fd.append("transient", "true");
   if ($("am-enabled").checked) { fd.append("alpha_matting", "true"); fd.append("alpha_matting_foreground_threshold", $("am-fg").value); fd.append("alpha_matting_background_threshold", $("am-bg").value); fd.append("alpha_matting_erode_size", $("am-erode").value); }
   const r = await fetch("/remove", { method: "POST", body: fd });
   if (!r.ok) { let d = "Server error"; try { d = (await r.json()).detail || d; } catch {} throw new Error(d); }
@@ -531,6 +539,8 @@ async function runJob(job) {
 function reprocessJob(job, newModel) {
   if (!confirm(`Reprocess "${job.name}" with ${INFO[newModel]?.title || newModel}?\n\nThis replaces the current result for this image.`)) return;
   job.model = newModel; job.state = "queued"; job.err = null;
+  // Per-image override: load the model but do not steal the pinned default.
+  job.transient = newModel !== selectedModel;
   if (job.outUrl) { URL.revokeObjectURL(job.outUrl); job.outUrl = null; } job.outBlob = null; job.ms = null; job.outKB = null;
   renderAll(); pump();
 }

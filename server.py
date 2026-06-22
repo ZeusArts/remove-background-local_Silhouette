@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import io
 import os
+import gc
 import glob
 import json
 import time
@@ -177,6 +178,12 @@ DEFAULT_MODEL = os.environ.get("REMBG_MODEL", "isnet-general-use")
 MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "30"))
 MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
 
+# How long an idle (unused) model session stays in RAM before being evicted.
+# Set to 0 to disable the background evictor entirely.
+MODEL_IDLE_TTL = int(os.environ.get("RBL_MODEL_IDLE_TTL", "600"))
+# How often the evictor wakes up to check for idle models.
+MODEL_EVICTOR_INTERVAL = int(os.environ.get("RBL_MODEL_EVICTOR_INTERVAL", "30"))
+
 # Execution providers for onnxruntime. CPU is the reliable default (CoreML hangs
 # on some models on Apple Silicon). Override with REMBG_PROVIDERS if you want to
 # experiment, e.g. "CoreMLExecutionProvider,CPUExecutionProvider".
@@ -225,11 +232,66 @@ def download_progress(name: str):
 _SESSIONS: dict[str, object] = {}
 _MODEL_STATE: dict[str, str] = {}   # name -> "loading" | "ready" | "error"
 _MODEL_ERROR: dict[str, str] = {}
+_LAST_USED: dict[str, float] = {}   # name -> monotonic timestamp of last touch
 _LOAD_LOCKS: dict[str, asyncio.Lock] = {}
+# The "pinned" model is the one the UI currently shows as the active default.
+# It is exempt from idle-TTL eviction. /set_default_model rotates this; an
+# explicit per-image override via /remove?transient=true does NOT.
+_PINNED_MODEL: str = DEFAULT_MODEL
 # Serializes inference (processing queue). Created lazily inside the running
 # event loop: on Python 3.9 an asyncio.Lock() built at import time binds to the
 # wrong loop and raises "got Future attached to a different loop" under uvicorn.
 _INFER_LOCK: asyncio.Lock | None = None
+
+
+def _touch(model_name: str) -> None:
+    _LAST_USED[model_name] = time.monotonic()
+
+
+def _evict(model_name: str) -> bool:
+    """Drop a loaded session from RAM. Does NOT touch the on-disk .onnx file."""
+    if model_name not in _SESSIONS:
+        return False
+    _SESSIONS.pop(model_name, None)
+    _LAST_USED.pop(model_name, None)
+    _MODEL_STATE.pop(model_name, None)
+    _MODEL_ERROR.pop(model_name, None)
+    gc.collect()
+    log.info("Unloaded model %s from RAM", model_name)
+    return True
+
+
+def _evictor_sweep() -> list[str]:
+    """One pass of the idle-TTL eviction logic. Returns the names evicted.
+
+    Pure (no awaits) so it can be unit-tested without driving the event loop.
+    """
+    if MODEL_IDLE_TTL <= 0:
+        return []
+    now = time.monotonic()
+    evicted: list[str] = []
+    for name in [n for n in list(_SESSIONS) if n != _PINNED_MODEL]:
+        last = _LAST_USED.get(name, now)
+        if now - last > MODEL_IDLE_TTL and _evict(name):
+            evicted.append(name)
+    return evicted
+
+
+async def _evictor_loop() -> None:
+    """Background task: drops loaded models that have been idle past the TTL.
+
+    The pinned model is never evicted by the timer — it's the one the user is
+    actively working with. Everything else (overrides, leftovers from a model
+    switch) is fair game.
+    """
+    while True:
+        try:
+            await asyncio.sleep(MODEL_EVICTOR_INTERVAL)
+            _evictor_sweep()
+        except asyncio.CancelledError:
+            raise
+        except Exception:  # noqa: BLE001
+            log.exception("Model evictor loop error (continuing)")
 
 
 def get_infer_lock() -> asyncio.Lock:
@@ -262,11 +324,13 @@ async def ensure_session(model_name: str):
     """
     _check_model(model_name)
     if model_name in _SESSIONS:
+        _touch(model_name)
         return _SESSIONS[model_name]
 
     lock = _LOAD_LOCKS.setdefault(model_name, asyncio.Lock())
     async with lock:
         if model_name in _SESSIONS:
+            _touch(model_name)
             return _SESSIONS[model_name]
         _MODEL_STATE[model_name] = "loading"
         _MODEL_ERROR.pop(model_name, None)
@@ -282,6 +346,7 @@ async def ensure_session(model_name: str):
             raise
         _SESSIONS[model_name] = session
         _MODEL_STATE[model_name] = "ready"
+        _touch(model_name)
         log.info("Model %s ready in %.1fs", model_name, time.time() - t0)
         return session
 
@@ -291,6 +356,32 @@ async def ensure_session(model_name: str):
 # ---------------------------------------------------------------------------
 
 app = FastAPI(title="remove-background-local", version=APP_VERSION)
+
+_EVICTOR_TASK: asyncio.Task | None = None
+
+
+@app.on_event("startup")
+async def _start_evictor() -> None:
+    global _EVICTOR_TASK
+    if MODEL_IDLE_TTL > 0 and _EVICTOR_TASK is None:
+        _EVICTOR_TASK = asyncio.create_task(_evictor_loop())
+        log.info(
+            "Model evictor running: idle TTL %ds, check every %ds (pinned=%s)",
+            MODEL_IDLE_TTL, MODEL_EVICTOR_INTERVAL, _PINNED_MODEL,
+        )
+
+
+@app.on_event("shutdown")
+async def _stop_evictor() -> None:
+    global _EVICTOR_TASK
+    if _EVICTOR_TASK is not None:
+        _EVICTOR_TASK.cancel()
+        try:
+            await _EVICTOR_TASK
+        except (asyncio.CancelledError, Exception):  # noqa: BLE001
+            pass
+        _EVICTOR_TASK = None
+
 
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -311,7 +402,9 @@ async def health():
         "ok": True,
         "version": APP_VERSION,
         "default_model": DEFAULT_MODEL,
+        "pinned_model": _PINNED_MODEL,
         "loaded_models": list(_SESSIONS.keys()),
+        "idle_ttl_seconds": MODEL_IDLE_TTL,
     }
 
 
@@ -364,11 +457,55 @@ async def warmup(model: str = Form(DEFAULT_MODEL)):
     return {"model": model, "state": state_of(model), "size_mb": MODEL_SIZES_MB.get(model)}
 
 
+@app.post("/unload_model")
+async def unload_model(model: str = Form(...)):
+    """Drop a loaded model from RAM without touching its on-disk .onnx cache.
+
+    Useful for freeing memory when a model is no longer needed. The next
+    request that uses it will reload it from the local cache (no re-download).
+    """
+    _check_model(model)
+    unloaded = _evict(model)
+    return {"model": model, "unloaded": unloaded, "state": state_of(model)}
+
+
+@app.post("/set_default_model")
+async def set_default_model(model: str = Form(...), warmup: bool = Form(False)):
+    """Pin a new active default model and evict every other loaded model.
+
+    The UI calls this when the user changes the model in the main dropdown so
+    that switching from BiRefNet to ISNet (or vice-versa) doesn't leave both
+    sitting in RAM. Per-image overrides (/remove with transient=true) do NOT
+    use this — they go through the idle TTL instead.
+    """
+    global _PINNED_MODEL
+    _check_model(model)
+    _PINNED_MODEL = model
+    evicted = []
+    for name in list(_SESSIONS):
+        if name != model and _evict(name):
+            evicted.append(name)
+    if warmup and model not in _SESSIONS and state_of(model) != "loading":
+        async def _bg():
+            try:
+                await ensure_session(model)
+            except Exception:  # noqa: BLE001
+                pass
+        asyncio.create_task(_bg())
+    return {
+        "pinned": _PINNED_MODEL,
+        "evicted": evicted,
+        "loaded": list(_SESSIONS.keys()),
+        "state": state_of(model),
+    }
+
+
 @app.post("/delete_model")
 async def delete_model(model: str = Form(...)):
     """Delete a model's cached .onnx file from disk and unload it from memory."""
     _check_model(model)
     _SESSIONS.pop(model, None)
+    _LAST_USED.pop(model, None)
     _MODEL_STATE.pop(model, None)
     _MODEL_ERROR.pop(model, None)
     path = model_file(model)
@@ -397,8 +534,15 @@ async def remove_background(
     alpha_matting_foreground_threshold: int = Form(240),
     alpha_matting_background_threshold: int = Form(10),
     alpha_matting_erode_size: int = Form(10),
+    transient: bool = Form(False),
 ):
-    """Process an image and return a PNG with a transparent background."""
+    """Process an image and return a PNG with a transparent background.
+
+    When ``transient`` is true the request is treated as a one-off override:
+    the model is loaded if needed but the pinned default is left alone, so the
+    idle TTL will reclaim this model later. Used for per-image reprocessing
+    with a different model from the UI.
+    """
     # Validate size
     raw = await image.read()
     if len(raw) == 0:
@@ -418,8 +562,9 @@ async def remove_background(
         raise HTTPException(status_code=400, detail=f"Invalid image: {exc}")
 
     log.info(
-        "Processing %s (%dx%d, %.1f KB) with model=%s",
+        "Processing %s (%dx%d, %.1f KB) with model=%s%s",
         image.filename, img.width, img.height, len(raw) / 1024, model,
+        " (transient)" if transient else "",
     )
 
     # Loads/downloads the model if needed (in a worker thread).
@@ -444,6 +589,7 @@ async def remove_background(
     elapsed = time.time() - t0
 
     png_bytes = await run_in_threadpool(_encode_png, out)
+    _touch(model)
     log.info("Done in %.2fs", elapsed)
 
     headers = {
