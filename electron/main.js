@@ -10,7 +10,7 @@ const path = require("path");
 const fs = require("fs");
 const os = require("os");
 
-const APP_NAME = "Remove Background Local";
+const APP_NAME = "Remove Background Local - Silhouette -ZeusArts Version";
 // When launched by `rm-bg desktop` these come from the environment. When running
 // as a packaged .app they are not set, so fall back to the bundled files
 // (next to this script) and the venv created under the user's home.

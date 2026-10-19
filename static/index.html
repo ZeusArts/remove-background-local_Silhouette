@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Remove Background Local</title>
+<title>Remove Background Local - Silhouette -ZeusArts Version</title>
 <link rel="icon" type="image/png" href="/static/logo.png" />
 <link rel="apple-touch-icon" href="/static/logo.png" />
 <style>
@@ -341,7 +341,7 @@ const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2
 
 const I18N = {
   en: {
-    documentTitle: "Remove Background Local",
+    documentTitle: "Remove Background Local - Silhouette -ZeusArts Version",
     navEditor: "Remove background", navModels: "Models", starting: "starting…", ready: "ready",
     language: "Language", sessions: "Sessions", newSession: "New session", sidebarEmpty: "No images yet.<br>Drop some to start.",
     downloadAll: "Download all", fileFormat: "File Format", closeAll: "Close all", showAll: "Show all",
@@ -360,7 +360,7 @@ const I18N = {
     modelDownloadFailed: "Download failed", modelDeleteFailed: "Delete failed", customColor: "Custom color",
     transparent: "Transparent", white: "White", black: "Black", gray: "Gray", green: "Green", blue: "Blue",
     skippedFile: "Skipped \"{0}\" (not an image)", processingFailed: "Error", downloadingModel: "downloading {0}…", processing: "processing…",
-    serverError: "Server error", reprocessConfirm: "Reprocess \"{0}\" with {1}?\n\nThis replaces the current result for this image.",
+    serverError: "Server error",
     zoomTooltip: "Scroll over image to zoom; drag to pan; double-click to reset", assetUnavailable: "Asset unavailable",
     couldNotMakeSilhouette: "Could not change result", couldNotCreatePng: "Could not create black silhouette PNG", originalUnavailable: "Original image is unavailable",
     originalColorUnavailable: "Original color result is unavailable", emptyClosed: "All cards closed. Click an image in the sidebar to reopen it.",
@@ -375,7 +375,7 @@ const I18N = {
     timeJustNow: "just now", timeSeconds: "{0}s ago", timeMinutes: "{0} min ago", timeHours: "{0} h ago", timeDays: "{0} day{1} ago"
   },
   ja: {
-    documentTitle: "Remove Background Local",
+    documentTitle: "Remove Background Local - Silhouette -ZeusArts Version",
     navEditor: "背景を削除", navModels: "モデル", starting: "起動中…", ready: "準備完了",
     language: "言語", sessions: "セッション", newSession: "新しいセッション", sidebarEmpty: "画像はまだありません。<br>画像をドロップしてください。",
     downloadAll: "すべてダウンロード", fileFormat: "ファイル形式", closeAll: "すべて閉じる", showAll: "すべて表示",
@@ -394,7 +394,7 @@ const I18N = {
     modelDownloadFailed: "ダウンロードに失敗しました", modelDeleteFailed: "削除に失敗しました", customColor: "カスタムカラー",
     transparent: "透明", white: "白", black: "黒", gray: "グレー", green: "緑", blue: "青",
     skippedFile: "「{0}」をスキップしました（画像ファイルではありません）", processingFailed: "エラー", downloadingModel: "{0}をダウンロード中…", processing: "処理中…",
-    serverError: "サーバーエラー", reprocessConfirm: "「{0}」を{1}モデルで再処理しますか？\n\n現在の処理結果は置き換えられます。",
+    serverError: "サーバーエラー",
     zoomTooltip: "画像上でホイール：拡大縮小、ドラッグ：移動、ダブルクリック：表示をリセット", assetUnavailable: "画像を表示できません",
     couldNotMakeSilhouette: "画像を変更できませんでした", couldNotCreatePng: "黒いシルエットPNGを作成できませんでした", originalUnavailable: "元画像を利用できません",
     originalColorUnavailable: "元のカラー画像を利用できません", emptyClosed: "すべてのカードを閉じました。サイドバーの画像をクリックすると再表示できます。",
@@ -659,7 +659,6 @@ async function runJob(job) {
   persistJob(job);
 }
 function reprocessJob(job, newModel) {
-  if (!confirm(tr("reprocessConfirm", job.name, localizedModelInfo(newModel).title || newModel))) return;
   job.model = newModel; job.state = "queued"; job.err = null; job.blackForeground = false; job.originalOutBlob = null;
   // Per-image override: load the model but do not steal the pinned default.
   job.transient = newModel !== selectedModel;

@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="static/logo.png" alt="Remove Background in Local logo" width="120" />
+  <img src="static/logo.png" alt="Remove Background Local Silhouette Edition logo" width="120" />
 </p>
 
-<h1 align="center">Remove Background in Local</h1>
+<h1 align="center">Remove Background Local - Silhouette -ZeusArts Version</h1>
 
 <p align="center">
   <a href="https://tecnomanu.github.io/remove-background-local/"><b>🌐 Sitio web</b></a> ·
@@ -10,7 +10,19 @@
   <a href="#install-and-run">Instalar</a>
 </p>
 
-![Remove Background in Local](docs/screenshot.webp)
+## ZeusArts Silhouette Edition — 変更点と目的
+
+このフォークは、レーザー加工用データを作る前段階の画像処理を簡単にするためのカスタマイズです。
+
+- 背景除去後の画像を透過を保った黒いシルエットに切り替えられます。Illustratorでトレースしてアウトライン化する作業に使えます。
+- プレビューだけに背景色を表示でき、保存画像にはその背景色を合成しません。
+- マウスホイールでの拡大縮小とドラッグでの表示移動を追加し、細部を確認しやすくしました。
+- UIを英語・日本語に対応させ、上部の操作、モデル選択、画像投入欄、詳細設定を整理しました。アルファマッティングのしきい値3項目も横並びです。
+- Reprocess時の確認ダイアログをなくし、モデルを選んだらそのまま再処理できるようにしました。
+
+ここで作成するのはレーザー用G-codeではなく、彫刻・カット用データに進む前のシルエット画像です。画像の背景除去からベクタートレースまでの作業を扱いやすくすることを目的としています。
+
+![Remove Background Local - Silhouette -ZeusArts Version](docs/screenshot.webp)
 
 A fast, private background-removal tool that runs entirely on your own machine.
 
@@ -145,11 +157,11 @@ rm-bg desktop uninstall    # remove it
 
 What this does per platform:
 
-- **macOS** — builds a real `Remove Background Local.app` into `/Applications`
+- **macOS** — builds a real `Remove Background Local - Silhouette -ZeusArts Version.app` into `/Applications`
   (its own name, icon and bundle id). Open it from Launchpad/Applications. Built
   locally, so there is no Gatekeeper warning.
 - **Linux** — adds a `.desktop` launcher to `~/.local/share/applications`, so
-  "Remove Background Local" shows up in your application menu.
+  "Remove Background Local - Silhouette -ZeusArts Version" shows up in your application menu.
 - **Windows** — creates a Start Menu shortcut (with the app icon).
 
 All of them launch the same desktop window and use the Python environment under
