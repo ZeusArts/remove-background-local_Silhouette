@@ -114,9 +114,12 @@
 
   details { margin-top: 10px; font-size: 13px; }
   details summary { cursor: pointer; color: var(--text-dim); }
-  details .row { display: flex; gap: 16px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+  details .row { display: flex; flex-direction: column; gap: 8px; align-items: stretch; margin-top: 8px; }
   details input[type="number"] { width: 70px; background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; }
   details .toggle { display: flex; align-items: center; gap: 6px; }
+  details .threshold-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  details .threshold-row label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  details .threshold-row input[type="number"] { box-sizing: border-box; width: 100%; }
 
   .bg-picker { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
   .bg-picker .lbl { font-size: 12px; color: var(--text-dim); }
@@ -272,9 +275,11 @@
             <summary data-i18n="advancedOptions">Advanced options (alpha matting)</summary>
             <div class="row">
               <label class="toggle"><input type="checkbox" id="am-enabled" /> <span data-i18n="enableMatting">Enable alpha matting (better for hair / fine edges, slower)</span></label>
-              <label><span data-i18n="fgThreshold">FG threshold</span> <input type="number" id="am-fg" value="240" min="0" max="255" /></label>
-              <label><span data-i18n="bgThreshold">BG threshold</span> <input type="number" id="am-bg" value="10" min="0" max="255" /></label>
-              <label><span data-i18n="erode">Erode</span> <input type="number" id="am-erode" value="10" min="0" max="50" /></label>
+              <div class="threshold-row">
+                <label><span data-i18n="fgThreshold">FG threshold</span> <input type="number" id="am-fg" value="240" min="0" max="255" /></label>
+                <label><span data-i18n="bgThreshold">BG threshold</span> <input type="number" id="am-bg" value="10" min="0" max="255" /></label>
+                <label><span data-i18n="erode">Erode</span> <input type="number" id="am-erode" value="10" min="0" max="50" /></label>
+              </div>
             </div>
           </details>
         </div>
