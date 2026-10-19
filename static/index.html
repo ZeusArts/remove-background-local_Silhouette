@@ -264,7 +264,7 @@
       </div>
 
       <div class="bg-picker" id="global-bg"><span class="lbl" data-i18n="defaultBackground">Default result background:</span></div>
-      <div style="margin-top:8px;font-size:12px;color:var(--text-dim)"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="white-preview-bg" /> <span data-i18n="whitePreview">White preview background only (not included in downloads)</span></label></div>
+      <div style="margin-top:8px;font-size:12px;color:var(--text-dim)"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="preview-bg-only" /> <span data-i18n="previewBackgroundOnly">Preview background only (not included in downloads)</span></label></div>
 
       <details>
         <summary data-i18n="advancedOptions">Advanced options (alpha matting)</summary>
@@ -336,7 +336,7 @@ const I18N = {
     language: "Language", sessions: "Sessions", newSession: "New session", sidebarEmpty: "No images yet.<br>Drop some to start.",
     downloadAll: "Download all", downloadFormat: "Download format", closeAll: "Close all", showAll: "Show all",
     dropImages: "Drag images here", dropHint: "or click to select · several at once · paste with Cmd/Ctrl+V (PNG, JPG, WEBP · max 30 MB each)",
-    defaultBackground: "Default result background:", whitePreview: "White preview background only (not included in downloads)",
+    defaultBackground: "Default result background:", previewBackgroundOnly: "Preview background only (not included in downloads)",
     advancedOptions: "Advanced options (alpha matting)", enableMatting: "Enable alpha matting (better for hair / fine edges, slower)",
     fgThreshold: "FG threshold", bgThreshold: "BG threshold", erode: "Erode", emptyInitial: "Processed images will appear here.",
     modelsTitle: "Models", modelsLead: "Every model removes backgrounds, but they trade off speed and quality differently. You can pre-download any of them here; the one you use is downloaded automatically the first time.",
@@ -370,7 +370,7 @@ const I18N = {
     language: "言語", sessions: "セッション", newSession: "新しいセッション", sidebarEmpty: "画像はまだありません。<br>画像をドロップしてください。",
     downloadAll: "すべてダウンロード", downloadFormat: "ダウンロード形式", closeAll: "すべて閉じる", showAll: "すべて表示",
     dropImages: "ここに画像をドラッグ", dropHint: "クリックして選択 · 複数選択可 · Cmd/Ctrl+Vで貼り付け（PNG、JPG、WEBP · 1枚最大30 MB）",
-    defaultBackground: "保存画像の背景色：", whitePreview: "プレビューのみ白背景にする（ダウンロード画像には反映されません）",
+    defaultBackground: "保存画像の背景色：", previewBackgroundOnly: "プレビュー背景のみ（ダウンロード画像には反映しない）",
     advancedOptions: "詳細設定（アルファマッティング）", enableMatting: "アルファマッティングを有効化（髪や細い輪郭を改善しますが、処理が遅くなります）",
     fgThreshold: "前景しきい値", bgThreshold: "背景しきい値", erode: "収縮量", emptyInitial: "処理した画像がここに表示されます。",
     modelsTitle: "モデル", modelsLead: "モデルによって処理速度と品質が異なります。ここで事前にダウンロードできます。選択したモデルは初回使用時に自動でダウンロードされます。",
@@ -602,7 +602,7 @@ function buildSwatches(container, current, onPick, small) {
 }
 function buildGlobalSwatches() { buildSwatches($("global-bg"), resultBg, (bg) => { resultBg = bg; buildGlobalSwatches(); renderResults(); }, false); }
 function effectiveBg(job) { return job.bg != null ? job.bg : resultBg; }
-$("white-preview-bg").addEventListener("change", () => renderResults());
+$("preview-bg-only").addEventListener("change", () => renderResults());
 
 // ===================== Drag & drop / paste ===============================
 const drop = $("drop"), fileInput = $("file");
@@ -768,7 +768,7 @@ async function setBlackForeground(job, enabled) {
 }
 async function exportJob(job, format) {
   if (!job.outUrl) return;
-  const eff = effectiveBg(job); const img = await loadImage(job.outUrl);
+  const eff = $("preview-bg-only").checked ? "checker" : effectiveBg(job); const img = await loadImage(job.outUrl);
   const cv = document.createElement("canvas"); cv.width = img.naturalWidth; cv.height = img.naturalHeight;
   const ctx = cv.getContext("2d"); const transparent = eff === "checker";
   if (!transparent) { ctx.fillStyle = eff; ctx.fillRect(0, 0, cv.width, cv.height); }
@@ -845,7 +845,7 @@ function renderCard(job) {
   const inCell = document.createElement("div"); inCell.className = "cell checker";
   inCell.innerHTML = `<span class="label">${tr("original")}</span>`; const inputPreview = makeImg(job.inUrl, tr("original")); enablePreviewZoom(inCell, inputPreview, job, "input"); inCell.appendChild(inputPreview); pair.appendChild(inCell);
   const outCell = document.createElement("div"); outCell.className = "cell out";
-  const eff = effectiveBg(job); if ($("white-preview-bg").checked) outCell.style.background = "#ffffff"; else if (eff === "checker") outCell.classList.add("checker"); else outCell.style.background = eff;
+  const eff = effectiveBg(job); if (eff === "checker") outCell.classList.add("checker"); else outCell.style.background = eff;
   outCell.innerHTML = `<span class="label">${tr("noBackground")}</span>`;
   if (job.state === "done") { const outputPreview = makeImg(job.outUrl, tr("noBackground")); enablePreviewZoom(outCell, outputPreview, job, "output"); outCell.appendChild(outputPreview); }
   else if (job.state === "error") { const d = document.createElement("div"); d.className = "errmsg"; d.textContent = job.err || tr("error"); outCell.appendChild(d); }
