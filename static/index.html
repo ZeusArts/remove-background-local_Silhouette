@@ -17,7 +17,7 @@
   html, body { height: 100%; }
   body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-  .app-header { flex: 0 0 var(--header-h); padding: 0 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--panel); z-index: 30; }
+  .app-header { flex: 0 0 var(--header-h); padding: 0 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--panel); z-index: 30; }
   .app-header h1 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
   .app-header h1 span { color: var(--accent); }
   .app-header h1 small { color: var(--text-dim); font-weight: 400; font-size: 12px; }
@@ -27,6 +27,7 @@
   .nav-tab { background: none; border: 1px solid transparent; color: var(--text-dim); padding: 6px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; font-family: inherit; }
   .nav-tab:hover { color: var(--text); border-color: var(--border); }
   .nav-tab.active { color: var(--text); background: var(--panel-2); border-color: var(--border); }
+  .language-select { padding: 5px 8px; font-size: 12px; }
   .icon-btn { display: inline-flex; align-items: center; justify-content: center; }
   .icon-btn svg { display: block; }
 
@@ -216,10 +217,11 @@
 <header class="app-header">
   <h1>rm<span>.</span>background <small>local</small></h1>
   <nav class="nav">
-    <button class="nav-tab active" data-view="editor">Remove background</button>
-    <button class="nav-tab" data-view="models">Models</button>
+    <button class="nav-tab active" data-view="editor" data-i18n="navEditor">Remove background</button>
+    <button class="nav-tab" data-view="models" data-i18n="navModels">Models</button>
   </nav>
-  <div class="status"><span class="dot" id="dot"></span><span id="status-text">starting…</span></div>
+  <select id="language-select" class="language-select" aria-label="Language" title="Language"><option value="en">English</option><option value="ja">日本語</option></select>
+  <div class="status"><span class="dot" id="dot"></span><span id="status-text" data-i18n="starting">starting…</span></div>
 </header>
 
 <div class="app-main">
@@ -229,11 +231,11 @@
 
   <aside class="sidebar">
     <div class="sidebar-head">
-      <span class="ttl">Sessions <span class="leg" id="sess-leg"></span></span>
-      <button class="btn-new" id="new-session">New session</button>
+      <span class="ttl"><span data-i18n="sessions">Sessions</span> <span class="leg" id="sess-leg"></span></span>
+      <button class="btn-new" id="new-session" data-i18n="newSession">New session</button>
     </div>
     <div class="sidebar-list" id="sidebar-list">
-      <div class="sidebar-empty" id="sidebar-empty">No images yet.<br>Drop some to start.</div>
+      <div class="sidebar-empty" id="sidebar-empty" data-i18n-html="sidebarEmpty">No images yet.<br>Drop some to start.</div>
     </div>
   </aside>
 
@@ -248,29 +250,29 @@
           <div class="dd-menu" id="model-menu" hidden></div>
         </div>
         <div class="btns">
-          <button id="download-all" disabled>Download all</button>
-          <select id="dl-format" title="Download format"><option value="png">PNG</option><option value="webp">WEBP</option><option value="jpg">JPG</option></select>
-          <button id="close-all" disabled>Close all</button>
+          <button id="download-all" disabled data-i18n="downloadAll">Download all</button>
+          <select id="dl-format" title="Download format" data-i18n-title="downloadFormat"><option value="png">PNG</option><option value="webp">WEBP</option><option value="jpg">JPG</option></select>
+          <button id="close-all" disabled data-i18n="closeAll">Close all</button>
           <span class="queue-info" id="queue-info"></span>
         </div>
       </div>
 
       <div class="drop-zone" id="drop">
-        <p class="big">Drag images here</p>
-        <p class="hint">or click to select &middot; several at once &middot; paste with Cmd/Ctrl+V (PNG, JPG, WEBP &middot; max 30 MB each)</p>
+        <p class="big" data-i18n="dropImages">Drag images here</p>
+        <p class="hint" data-i18n="dropHint">or click to select · several at once · paste with Cmd/Ctrl+V (PNG, JPG, WEBP · max 30 MB each)</p>
         <input type="file" id="file" accept="image/*" multiple style="display:none" />
       </div>
 
-      <div class="bg-picker" id="global-bg"><span class="lbl">Default result background:</span></div>
-      <div style="margin-top:8px;font-size:12px;color:var(--text-dim)"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="white-preview-bg" /> White preview background only (not included in downloads)</label></div>
+      <div class="bg-picker" id="global-bg"><span class="lbl" data-i18n="defaultBackground">Default result background:</span></div>
+      <div style="margin-top:8px;font-size:12px;color:var(--text-dim)"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="white-preview-bg" /> <span data-i18n="whitePreview">White preview background only (not included in downloads)</span></label></div>
 
       <details>
-        <summary>Advanced options (alpha matting)</summary>
+        <summary data-i18n="advancedOptions">Advanced options (alpha matting)</summary>
         <div class="row">
-          <label class="toggle"><input type="checkbox" id="am-enabled" /> Enable alpha matting (better for hair / fine edges, slower)</label>
-          <label>FG threshold <input type="number" id="am-fg" value="240" min="0" max="255" /></label>
-          <label>BG threshold <input type="number" id="am-bg" value="10" min="0" max="255" /></label>
-          <label>Erode <input type="number" id="am-erode" value="10" min="0" max="50" /></label>
+          <label class="toggle"><input type="checkbox" id="am-enabled" /> <span data-i18n="enableMatting">Enable alpha matting (better for hair / fine edges, slower)</span></label>
+          <label><span data-i18n="fgThreshold">FG threshold</span> <input type="number" id="am-fg" value="240" min="0" max="255" /></label>
+          <label><span data-i18n="bgThreshold">BG threshold</span> <input type="number" id="am-bg" value="10" min="0" max="255" /></label>
+          <label><span data-i18n="erode">Erode</span> <input type="number" id="am-erode" value="10" min="0" max="50" /></label>
         </div>
       </details>
     </div>
@@ -278,7 +280,7 @@
     <div class="results" id="results">
       <div class="results-empty" id="results-empty">
         <img class="empty-art" id="empty-art" src="/static/empty-dog.webp" alt="" onerror="this.style.display='none'" />
-        <div class="empty-text" id="empty-text">Processed images will appear here.</div>
+        <div class="empty-text" id="empty-text" data-i18n="emptyInitial">Processed images will appear here.</div>
       </div>
     </div>
   </div>
@@ -288,10 +290,10 @@
 <div class="view" id="view-models" hidden>
   <div class="models-page">
     <div class="inner">
-      <h2>Models</h2>
-      <p class="lead">Every model removes backgrounds, but they trade off speed and quality differently. You can pre-download any of them here; the one you use is downloaded automatically the first time.</p>
+      <h2 data-i18n="modelsTitle">Models</h2>
+      <p class="lead" data-i18n="modelsLead">Every model removes backgrounds, but they trade off speed and quality differently. You can pre-download any of them here; the one you use is downloaded automatically the first time.</p>
       <div id="models-list"></div>
-      <p class="note">Times are rough per-image figures on Apple Silicon using CPU execution. Models are cached locally after the first download and then run fully offline.</p>
+      <p class="note" data-i18n="modelsNote">Times are rough per-image figures on Apple Silicon using CPU execution. Models are cached locally after the first download and then run fully offline.</p>
     </div>
   </div>
 </div><!-- /view-models -->
@@ -304,7 +306,7 @@
     <span class="by">&copy; <b>tecno.manu</b> (Manuel Bruña)</span>
     <a class="cafe" href="https://cafecito.app/tecnomanu" target="_blank" rel="noopener">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
-      Buy me a coffee / Invitame un café
+      <span data-i18n="coffee">Buy me a coffee / Invitame un café</span>
     </a>
   </span>
 </footer>
@@ -314,11 +316,11 @@
 <div class="overlay" id="overlay">
   <div class="install-box" id="install-box">
     <div class="spinner"></div>
-    <h2 id="install-title">Setting up rm.background local</h2>
-    <p id="install-msg">Downloading the AI model for the first time…</p>
+    <h2 id="install-title" data-i18n="installTitle">Setting up rm.background local</h2>
+    <p id="install-msg" data-i18n="installMessage">Downloading the AI model for the first time…</p>
     <div class="progress"><span id="install-bar"></span></div>
-    <p class="sub" id="install-sub">This is a one-time download and is cached on your machine.</p>
-    <button class="primary" id="install-retry" style="display:none;">Retry</button>
+    <p class="sub" id="install-sub" data-i18n="installSub">This is a one-time download and is cached on your machine.</p>
+    <button class="primary" id="install-retry" style="display:none;" data-i18n="retry">Retry</button>
   </div>
 </div>
 
@@ -327,15 +329,121 @@ const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
+const I18N = {
+  en: {
+    documentTitle: "Remove Background Local",
+    navEditor: "Remove background", navModels: "Models", starting: "starting…", ready: "ready",
+    language: "Language", sessions: "Sessions", newSession: "New session", sidebarEmpty: "No images yet.<br>Drop some to start.",
+    downloadAll: "Download all", downloadFormat: "Download format", closeAll: "Close all", showAll: "Show all",
+    dropImages: "Drag images here", dropHint: "or click to select · several at once · paste with Cmd/Ctrl+V (PNG, JPG, WEBP · max 30 MB each)",
+    defaultBackground: "Default result background:", whitePreview: "White preview background only (not included in downloads)",
+    advancedOptions: "Advanced options (alpha matting)", enableMatting: "Enable alpha matting (better for hair / fine edges, slower)",
+    fgThreshold: "FG threshold", bgThreshold: "BG threshold", erode: "Erode", emptyInitial: "Processed images will appear here.",
+    modelsTitle: "Models", modelsLead: "Every model removes backgrounds, but they trade off speed and quality differently. You can pre-download any of them here; the one you use is downloaded automatically the first time.",
+    modelsNote: "Times are rough per-image figures on Apple Silicon using CPU execution. Models are cached locally after the first download and then run fully offline.",
+    coffee: "Buy me a coffee / Invitame un café", installTitle: "Setting up rm.background local", installMessage: "Downloading the AI model for the first time…",
+    installSub: "This is a one-time download and is cached on your machine.", retry: "Retry", downloadingFirst: "Downloading the AI model for the first time…",
+    preparingModel: "Preparing {0} in the background…", notDownloaded: "Not downloaded", modelDownloadTitle: "Download it on the Models page first",
+    defaultTag: "Default", speed: "Speed", quality: "Quality", bestFor: "Best for", download: "Download", downloaded: "Downloaded",
+    delete: "Delete", downloadProgress: "Downloading {0}%", initializing: "Initializing…", modelDownloaded: "{0} downloaded", modelDeleted: "{0} deleted",
+    deleteModelConfirm: "Delete the {0} model (~{1} MB) from disk?\n\nYou can download it again later.",
+    modelDownloadFailed: "Download failed", modelDeleteFailed: "Delete failed", customColor: "Custom color",
+    transparent: "Transparent", white: "White", black: "Black", gray: "Gray", green: "Green", blue: "Blue",
+    skippedFile: "Skipped \"{0}\" (not an image)", processingFailed: "Error", downloadingModel: "downloading {0}…", processing: "processing…",
+    serverError: "Server error", reprocessConfirm: "Reprocess \"{0}\" with {1}?\n\nThis replaces the current result for this image.",
+    zoomTooltip: "Scroll over image to zoom; drag to pan; double-click to reset", assetUnavailable: "Asset unavailable",
+    couldNotMakeSilhouette: "Could not change result", couldNotCreatePng: "Could not create black silhouette PNG", originalUnavailable: "Original image is unavailable",
+    originalColorUnavailable: "Original color result is unavailable", emptyClosed: "All cards closed. Click an image in the sidebar to reopen it.",
+    emptyDrop: "Nothing here yet. Drop an image to remove its background.", processedCount: "{0} processed", inQueue: "{0} in queue",
+    processedAgo: "processed", original: "Original", noBackground: "No background", waiting: "Waiting…", background: "Background:", model: "Model:",
+    reprocess: "Reprocess", restoreColor: "Restore color", blackSilhouette: "Make black silhouette", downloadingState: "Downloading model…", done: "Done", error: "Error", queued: "Queued",
+    current: "Current", session: "Session", openSession: "* open session", deleteSession: "Delete session", deleteImage: "Delete image",
+    currentSessionEmpty: "Current session is already empty", newSessionStarted: "New session started", allCardsClosed: "Close all", closeCard: "Close from view", noImages: "No images yet.<br>Drop some to start.",
+    settingUp: "Setting up rm.background local", downloadingModelFirst: "Downloading the {0} model (~{1} MB) for the first time…",
+    downloadPercent: "Downloading… {0}%", initializingModel: "Initializing model…", modelDownloadError: "Could not download the model",
+    retryNetwork: "{0}. Check your internet connection and try again.", modelReady: "Model ready — drop an image to start", downloadError: "Download error", modelError: "model error", serverUnreachable: "Could not reach the server",
+    timeJustNow: "just now", timeSeconds: "{0}s ago", timeMinutes: "{0} min ago", timeHours: "{0} h ago", timeDays: "{0} day{1} ago"
+  },
+  ja: {
+    documentTitle: "Remove Background Local",
+    navEditor: "背景を削除", navModels: "モデル", starting: "起動中…", ready: "準備完了",
+    language: "言語", sessions: "セッション", newSession: "新しいセッション", sidebarEmpty: "画像はまだありません。<br>画像をドロップしてください。",
+    downloadAll: "すべてダウンロード", downloadFormat: "ダウンロード形式", closeAll: "すべて閉じる", showAll: "すべて表示",
+    dropImages: "ここに画像をドラッグ", dropHint: "クリックして選択 · 複数選択可 · Cmd/Ctrl+Vで貼り付け（PNG、JPG、WEBP · 1枚最大30 MB）",
+    defaultBackground: "保存画像の背景色：", whitePreview: "プレビューのみ白背景にする（ダウンロード画像には反映されません）",
+    advancedOptions: "詳細設定（アルファマッティング）", enableMatting: "アルファマッティングを有効化（髪や細い輪郭を改善しますが、処理が遅くなります）",
+    fgThreshold: "前景しきい値", bgThreshold: "背景しきい値", erode: "収縮量", emptyInitial: "処理した画像がここに表示されます。",
+    modelsTitle: "モデル", modelsLead: "モデルによって処理速度と品質が異なります。ここで事前にダウンロードできます。選択したモデルは初回使用時に自動でダウンロードされます。",
+    modelsNote: "処理時間はApple SiliconでCPU実行した場合の目安です。モデルは初回ダウンロード後にローカルへ保存され、以降はオフラインで動作します。",
+    coffee: "コーヒーをごちそうする", installTitle: "rm.background local を準備しています", installMessage: "AIモデルを初めてダウンロードしています…",
+    installSub: "初回のみダウンロードします。モデルはこのPCに保存されます。", retry: "再試行", downloadingFirst: "AIモデルを初めてダウンロードしています…",
+    preparingModel: "{0}をバックグラウンドで準備しています…", notDownloaded: "未ダウンロード", modelDownloadTitle: "先にモデルページからダウンロードしてください",
+    defaultTag: "既定", speed: "速度", quality: "品質", bestFor: "おすすめ用途", download: "ダウンロード", downloaded: "ダウンロード済み",
+    delete: "削除", downloadProgress: "ダウンロード中 {0}%", initializing: "初期化中…", modelDownloaded: "{0}をダウンロードしました", modelDeleted: "{0}を削除しました",
+    deleteModelConfirm: "{0}モデル（約{1} MB）をディスクから削除しますか？\n\n後から再ダウンロードできます。",
+    modelDownloadFailed: "ダウンロードに失敗しました", modelDeleteFailed: "削除に失敗しました", customColor: "カスタムカラー",
+    transparent: "透明", white: "白", black: "黒", gray: "グレー", green: "緑", blue: "青",
+    skippedFile: "「{0}」をスキップしました（画像ファイルではありません）", processingFailed: "エラー", downloadingModel: "{0}をダウンロード中…", processing: "処理中…",
+    serverError: "サーバーエラー", reprocessConfirm: "「{0}」を{1}モデルで再処理しますか？\n\n現在の処理結果は置き換えられます。",
+    zoomTooltip: "画像上でホイール：拡大縮小、ドラッグ：移動、ダブルクリック：表示をリセット", assetUnavailable: "画像を表示できません",
+    couldNotMakeSilhouette: "画像を変更できませんでした", couldNotCreatePng: "黒いシルエットPNGを作成できませんでした", originalUnavailable: "元画像を利用できません",
+    originalColorUnavailable: "元のカラー画像を利用できません", emptyClosed: "すべてのカードを閉じました。サイドバーの画像をクリックすると再表示できます。",
+    emptyDrop: "画像はまだありません。背景を削除する画像をドロップしてください。", processedCount: "{0}件処理済み", inQueue: "{0}件待機中",
+    processedAgo: "処理", original: "元画像", noBackground: "背景削除後", waiting: "待機中…", background: "背景色：", model: "モデル：",
+    reprocess: "再処理", restoreColor: "カラーに戻す", blackSilhouette: "黒いシルエットにする", downloadingState: "モデルをダウンロード中…", done: "完了", error: "エラー", queued: "待機中",
+    current: "現在", session: "セッション", openSession: "* 表示中のセッション", deleteSession: "セッションを削除", deleteImage: "画像を削除",
+    currentSessionEmpty: "現在のセッションは空です", newSessionStarted: "新しいセッションを開始しました", allCardsClosed: "すべて閉じる", closeCard: "一覧から閉じる", noImages: "画像はまだありません。<br>画像をドロップしてください。",
+    settingUp: "rm.background local を準備しています", downloadingModelFirst: "{0}モデル（約{1} MB）を初めてダウンロードしています…",
+    downloadPercent: "ダウンロード中… {0}%", initializingModel: "モデルを初期化中…", modelDownloadError: "モデルをダウンロードできませんでした",
+    retryNetwork: "{0}。インターネット接続を確認して、もう一度お試しください。", modelReady: "モデルの準備ができました。画像をドロップしてください。", downloadError: "ダウンロードエラー", modelError: "モデルエラー", serverUnreachable: "サーバーに接続できませんでした",
+    timeJustNow: "たった今", timeSeconds: "{0}秒前", timeMinutes: "{0}分前", timeHours: "{0}時間前", timeDays: "{0}日前"
+  }
+};
+const MODEL_JA = {
+  "isnet-general-use": { title: "ISNet General", tagline: "幅広い画像におすすめ", speed: "高速（約1秒）", quality: "非常に良い", best_for: "幅広い画像の既定モデル", description: "速度と品質のバランスに優れた既定モデルです。写真、商品、人物に安定して使えます。CPUでも高速で、多くの場面で正確なため、最初に試すモデルとしておすすめです。" },
+  "u2net": { title: "U2Net", tagline: "単純な被写体を高速処理", speed: "最速（約0.5秒）", quality: "良い", best_for: "輪郭が明瞭な被写体、商品", description: "定番の背景削除モデルです。商品写真など、背景との境界がはっきりした画像を高速に処理します。輪郭はISNetやBiRefNetより粗くなる場合があります。" },
+  "u2net_human_seg": { title: "U2Net Human", tagline: "人物画像におすすめ", speed: "最速（約0.5秒）", quality: "良い（人物向け）", best_for: "人物、手早い切り抜き", description: "人物の切り抜きに特化したモデルです。髪の細部より速度を重視するポートレートや全身写真に便利です。物や動物の切り抜きには適していません。" },
+  "birefnet-general-lite": { title: "BiRefNet Lite", tagline: "高品質、やや低速", speed: "低速（約9秒）", quality: "高い", best_for: "待ち時間を抑えた高品質処理", description: "BiRefNetの軽量版です。標準モデルに近い品質を保ちながら、処理時間を短縮しています。ISNetよりきれいな輪郭を求め、数秒の待ち時間を許容できる場合に適しています。" },
+  "birefnet-general": { title: "BiRefNet General", tagline: "最高品質、低速", speed: "最も低速（約20秒）", quality: "最高", best_for: "画像を問わない最高品質処理", description: "高精度な汎用セグメンテーションモデルです。難しい画像でも細かな輪郭を保ち、高品質に切り抜きます。約930 MBと大きく、CPUでは低速なため、速度より品質を重視する場合に使ってください。" },
+  "birefnet-portrait": { title: "BiRefNet Portrait", tagline: "人物向け最高品質、低速", speed: "低速（約20秒）", quality: "最高（人物向け）", best_for: "髪の切り抜きが難しい人物", description: "人物向けに調整されたBiRefNetです。ふわっとした髪や乱れ毛のあるポートレートに適しています。詳細設定のアルファマッティングを併用すると効果的です。BiRefNet Generalと同様、大容量で処理に時間がかかります。" }
+};
+let locale = (() => {
+  try {
+    const saved = localStorage.getItem("rbl-language");
+    if (saved === "en" || saved === "ja") return saved;
+  } catch {}
+  return navigator.language && navigator.language.toLowerCase().startsWith("ja") ? "ja" : "en";
+})();
+let statusDescriptor = { key: "starting", values: [], busy: false };
+function tr(key, ...values) {
+  let value = (I18N[locale] && I18N[locale][key]) || I18N.en[key] || key;
+  values.forEach((item, index) => { value = value.replaceAll("{" + index + "}", String(item)); });
+  return value;
+}
+function localizedModelInfo(key) { const info = INFO[key] || {}; return locale === "ja" ? { ...info, ...(MODEL_JA[key] || {}) } : info; }
+function applyLanguage() {
+  document.documentElement.lang = locale;
+  document.title = tr("documentTitle");
+  $("language-select").value = locale;
+  $("language-select").title = tr("language");
+  $("language-select").setAttribute("aria-label", tr("language"));
+  document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = tr(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-html]").forEach(el => { el.innerHTML = tr(el.dataset.i18nHtml); });
+  document.querySelectorAll("[data-i18n-title]").forEach(el => { el.title = tr(el.dataset.i18nTitle); });
+  $("status-text").textContent = tr(statusDescriptor.key, ...statusDescriptor.values);
+  $("dot").style.background = statusDescriptor.busy ? "var(--accent)" : "var(--ok)";
+}
+applyLanguage();
+
 const ICON_CLOSE = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
 const ICON_TRASH = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
 const ICON_WARN = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
 const ICON_CHECK = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 
 const SWATCHES = [
-  { bg: "checker", cls: "checker", title: "Transparent" },
-  { bg: "#ffffff", title: "White" }, { bg: "#000000", title: "Black" }, { bg: "#808080", title: "Gray" },
-  { bg: "#3ddc97", title: "Green" }, { bg: "#5b8def", title: "Blue" },
+  { bg: "checker", cls: "checker", titleKey: "transparent" },
+  { bg: "#ffffff", titleKey: "white" }, { bg: "#000000", titleKey: "black" }, { bg: "#808080", titleKey: "gray" },
+  { bg: "#3ddc97", titleKey: "green" }, { bg: "#5b8def", titleKey: "blue" },
 ];
 
 let MODELS = {}, SIZES = {}, INFO = {}, DOWNLOADED = {}, DEFAULT_MODEL = null;
@@ -351,12 +459,12 @@ function sessionCreatedAt(id) { const s = sessions.find(x => x.id === id); retur
 // ===================== Human-readable time ===============================
 function timeAgo(ts) {
   const s = Math.floor((Date.now() - ts) / 1000);
-  if (s < 10) return "just now";
-  if (s < 60) return s + "s ago";
-  const m = Math.floor(s / 60); if (m < 60) return m + " min ago";
-  const h = Math.floor(m / 60); if (h < 24) return h + " h ago";
-  const d = Math.floor(h / 24); if (d < 7) return d + " day" + (d > 1 ? "s" : "") + " ago";
-  try { return new Date(ts).toLocaleDateString([], { month: "short", day: "numeric" }); } catch { return ""; }
+  if (s < 10) return tr("timeJustNow");
+  if (s < 60) return tr("timeSeconds", s);
+  const m = Math.floor(s / 60); if (m < 60) return tr("timeMinutes", m);
+  const h = Math.floor(m / 60); if (h < 24) return tr("timeHours", h);
+  const d = Math.floor(h / 24); if (d < 7) return locale === "ja" ? tr("timeDays", d) : tr("timeDays", d, d > 1 ? "s" : "");
+  try { return new Date(ts).toLocaleDateString(locale === "ja" ? "ja-JP" : "en-US", { month: "short", day: "numeric" }); } catch { return ""; }
 }
 function refreshAgos() { document.querySelectorAll(".ago").forEach(el => { const ts = +el.dataset.ts; if (ts) el.textContent = timeAgo(ts); }); }
 setInterval(refreshAgos, 30000);
@@ -377,6 +485,7 @@ async function persistJob(job) {
 const toastEl = $("toast"); let toastTimer = null;
 function toast(msg, kind = "") { toastEl.textContent = msg; toastEl.className = "toast show " + kind; clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.className = "toast " + kind, 3500); }
 function setStatus(text, busy = false) { $("status-text").textContent = text; $("dot").style.background = busy ? "var(--accent)" : "var(--ok)"; }
+function setUiStatus(key, busy = false, ...values) { statusDescriptor = { key, values, busy }; setStatus(tr(key, ...values), busy); }
 
 // ===================== Model status API ==================================
 async function getStatus(model) { const r = await fetch("/model_status?model=" + encodeURIComponent(model)); if (!r.ok) throw new Error("status check failed"); return r.json(); }
@@ -390,7 +499,7 @@ async function pinDefaultModel(model, warm) {
 async function waitForModel(model, onTick) {
   let s = await getStatus(model); if (s.state === "ready") return s;
   await warmup(model);
-  while (true) { s = await getStatus(model); if (onTick) onTick(s); if (s.state === "ready") return s; if (s.state === "error") throw new Error(s.error || "Model failed to load"); await sleep(800); }
+  while (true) { s = await getStatus(model); if (onTick) onTick(s); if (s.state === "ready") return s; if (s.state === "error") throw new Error(s.error || tr("modelDownloadFailed")); await sleep(800); }
 }
 
 // ===================== Models ============================================
@@ -401,18 +510,19 @@ async function loadModels() {
   renderModelDropdown(); renderModelsPage();
 }
 function renderModelDropdown() {
-  const info = INFO[selectedModel] || {};
-  $("t-title").textContent = (info.title || selectedModel) + (SIZES[selectedModel] ? `  ·  ~${SIZES[selectedModel]} MB` : "");
-  $("t-tag").textContent = info.tagline || "";
+  const selectedInfo = localizedModelInfo(selectedModel);
+  $("t-title").textContent = (selectedInfo.title || selectedModel) + (SIZES[selectedModel] ? `  ·  ~${SIZES[selectedModel]} MB` : "");
+  $("t-tag").textContent = selectedInfo.tagline || "";
   const menu = $("model-menu"); menu.innerHTML = "";
-  for (const [key, info2] of Object.entries(INFO)) {
+  for (const key of Object.keys(INFO)) {
+    const modelInfo = localizedModelInfo(key);
     const avail = !!DOWNLOADED[key];
     const opt = document.createElement("div");
     opt.className = "dd-opt" + (key === selectedModel ? " sel" : "") + (avail ? "" : " disabled");
-    const na = avail ? "" : `<span class="o-na">Not downloaded</span>`;
-    opt.innerHTML = `<span class="o-main"><span class="o-title">${info2.title}<span class="o-size">~${SIZES[key]} MB</span>${na}</span><span class="o-tag">${info2.tagline || ""}</span></span><span class="o-check">${ICON_CHECK}</span>`;
+    const na = avail ? "" : `<span class="o-na">${tr("notDownloaded")}</span>`;
+    opt.innerHTML = `<span class="o-main"><span class="o-title">${modelInfo.title}<span class="o-size">~${SIZES[key]} MB</span>${na}</span><span class="o-tag">${modelInfo.tagline || ""}</span></span><span class="o-check">${ICON_CHECK}</span>`;
     if (avail) opt.addEventListener("click", () => { selectedModel = key; closeDropdown(); renderModelDropdown(); pinDefaultModel(key, false); });
-    else opt.title = "Download it on the Models page first";
+    else opt.title = tr("modelDownloadTitle");
     menu.appendChild(opt);
   }
 }
@@ -420,14 +530,15 @@ function openDropdown() { $("model-menu").hidden = false; }
 function closeDropdown() { $("model-menu").hidden = true; }
 $("model-trigger").addEventListener("click", (e) => { e.stopPropagation(); const m = $("model-menu"); m.hidden ? openDropdown() : closeDropdown(); });
 document.addEventListener("click", (e) => { if (!$("model-dd").contains(e.target)) closeDropdown(); });
-async function maybeWarm(model) { try { const s = await getStatus(model); if (s.state !== "ready") { toast(`Preparing ${INFO[model]?.title || model} in the background…`); warmup(model); } } catch {} }
+async function maybeWarm(model) { try { const s = await getStatus(model); if (s.state !== "ready") { toast(tr("preparingModel", localizedModelInfo(model).title || model)); warmup(model); } } catch {} }
 
 function renderModelsPage() {
   const list = $("models-list"); list.innerHTML = "";
-  for (const [key, info] of Object.entries(INFO)) {
+  for (const key of Object.keys(INFO)) {
+    const modelInfo = localizedModelInfo(key);
     const card = document.createElement("div");
     card.className = "model-card" + (key === DEFAULT_MODEL ? " is-default" : "");
-    card.innerHTML = `<div class="top"><span class="mtitle">${info.title}</span>${key === DEFAULT_MODEL ? `<span class="tag">Default</span>` : ""}<span class="id">${key}</span></div><div class="tagline">${info.tagline || ""}</div><div class="desc">${info.description}</div><div class="facts"><div class="fact"><b>Speed</b>${info.speed}</div><div class="fact"><b>Quality</b>${info.quality}</div><div class="fact"><b>Best for</b>${info.best_for}</div><div class="fact"><b>Download</b>~${SIZES[key]} MB</div><div class="dl" id="dl-${key}"></div></div>`;
+    card.innerHTML = `<div class="top"><span class="mtitle">${modelInfo.title}</span>${key === DEFAULT_MODEL ? `<span class="tag">${tr("defaultTag")}</span>` : ""}<span class="id">${key}</span></div><div class="tagline">${modelInfo.tagline || ""}</div><div class="desc">${modelInfo.description}</div><div class="facts"><div class="fact"><b>${tr("speed")}</b>${modelInfo.speed}</div><div class="fact"><b>${tr("quality")}</b>${modelInfo.quality}</div><div class="fact"><b>${tr("bestFor")}</b>${modelInfo.best_for}</div><div class="fact"><b>${tr("download")}</b>~${SIZES[key]} MB</div><div class="dl" id="dl-${key}"></div></div>`;
     list.appendChild(card); renderDlArea(key);
   }
 }
@@ -437,17 +548,17 @@ function renderDlArea(key, statusObj) {
   const state = statusObj ? statusObj.state : null;
   if (state === "loading") {
     const pct = Math.round(((statusObj && statusObj.progress != null ? statusObj.progress : 0)) * 100);
-    const label = (statusObj && statusObj.progress != null && statusObj.progress < 1) ? `Downloading ${pct}%` : "Initializing…";
+    const label = (statusObj && statusObj.progress != null && statusObj.progress < 1) ? tr("downloadProgress", pct) : tr("initializing");
     el.innerHTML = `<div class="progress"><span style="width:${pct}%"></span></div><div class="dl-label">${label}</div>`; return;
   }
   el.innerHTML = "";
   if (downloaded) {
-    const badge = document.createElement("span"); badge.className = "badge-dl"; badge.textContent = "Downloaded";
-    const del = document.createElement("button"); del.className = "btn-del"; del.textContent = "Delete";
+    const badge = document.createElement("span"); badge.className = "badge-dl"; badge.textContent = tr("downloaded");
+    const del = document.createElement("button"); del.className = "btn-del"; del.textContent = tr("delete");
     del.addEventListener("click", () => deleteModelUI(key));
     el.appendChild(badge); el.appendChild(del);
   } else {
-    const btn = document.createElement("button"); btn.textContent = "Download"; btn.addEventListener("click", () => downloadModelUI(key));
+    const btn = document.createElement("button"); btn.textContent = tr("download"); btn.addEventListener("click", () => downloadModelUI(key));
     el.appendChild(btn);
   }
 }
@@ -455,19 +566,19 @@ async function downloadModelUI(key) {
   try {
     await warmup(key);
     while (true) { const s = await getStatus(key); renderDlArea(key, s); if (s.state === "ready" || (s.downloaded && s.state !== "loading")) break; if (s.state === "error") throw new Error(s.error || "download failed"); await sleep(600); }
-    DOWNLOADED[key] = true; renderDlArea(key); renderModelDropdown(); toast(`${INFO[key]?.title || key} downloaded`, "ok");
-  } catch (e) { toast(e.message || "Download failed", "err"); renderDlArea(key); }
+    DOWNLOADED[key] = true; renderDlArea(key); renderModelDropdown(); toast(tr("modelDownloaded", localizedModelInfo(key).title || key), "ok");
+  } catch (e) { toast(e.message || tr("modelDownloadFailed"), "err"); renderDlArea(key); }
 }
 async function deleteModelUI(key) {
-  if (!confirm(`Delete the ${INFO[key]?.title || key} model (~${SIZES[key]} MB) from disk?\n\nYou can download it again later.`)) return;
+  if (!confirm(tr("deleteModelConfirm", localizedModelInfo(key).title || key, SIZES[key]))) return;
   try {
     const fd = new FormData(); fd.append("model", key);
     const r = await fetch("/delete_model", { method: "POST", body: fd });
     if (!r.ok) { let d = "Delete failed"; try { d = (await r.json()).detail || d; } catch {} throw new Error(d); }
     DOWNLOADED[key] = false;
     if (selectedModel === key) { const firstDl = Object.keys(INFO).find(k => DOWNLOADED[k]); selectedModel = firstDl || DEFAULT_MODEL; }
-    renderDlArea(key); renderModelDropdown(); toast(`${INFO[key]?.title || key} deleted`, "ok");
-  } catch (e) { toast(e.message || "Delete failed", "err"); }
+    renderDlArea(key); renderModelDropdown(); toast(tr("modelDeleted", localizedModelInfo(key).title || key), "ok");
+  } catch (e) { toast(e.message || tr("modelDeleteFailed"), "err"); }
 }
 
 // ===================== View nav ==========================================
@@ -480,12 +591,12 @@ function buildSwatches(container, current, onPick, small) {
   for (const sw of SWATCHES) {
     const b = document.createElement("button");
     b.className = "swatch" + (small ? " sm" : "") + (sw.cls ? " " + sw.cls : "") + (current === sw.bg ? " active" : "");
-    if (!sw.cls) b.style.background = sw.bg; b.title = sw.title || sw.bg;
+    if (!sw.cls) b.style.background = sw.bg; b.title = sw.titleKey ? tr(sw.titleKey) : sw.bg;
     b.addEventListener("click", () => onPick(sw.bg)); container.appendChild(b);
   }
   const custom = document.createElement("span");
   custom.className = "swatch custom" + (small ? " sm" : "") + (current && !SWATCHES.some(s => s.bg === current) ? " active" : "");
-  custom.title = "Custom color";
+  custom.title = tr("customColor");
   const inp = document.createElement("input"); inp.type = "color"; inp.value = (current && current.startsWith && current.startsWith("#")) ? current : "#ff8800";
   inp.addEventListener("input", (e) => onPick(e.target.value)); custom.appendChild(inp); container.appendChild(custom);
 }
@@ -506,7 +617,7 @@ document.addEventListener("paste", (e) => { const imgs = []; for (const it of e.
 function enqueue(files) {
   let added = 0;
   for (const f of files) {
-    if (!f.type.startsWith("image/")) { toast(`Skipped "${f.name}" (not an image)`, "err"); continue; }
+    if (!f.type.startsWith("image/")) { toast(tr("skippedFile", f.name), "err"); continue; }
     jobs.push({ id: genId(), sessionId: currentSessionId, createdAt: Date.now(), file: f, inBlob: f, name: f.name || `image-${added}.png`, model: selectedModel, state: "queued", inUrl: URL.createObjectURL(f), outUrl: null, outBlob: null, ms: null, outKB: null, bg: null, err: null, hidden: false });
     added++;
   }
@@ -515,22 +626,22 @@ function enqueue(files) {
 async function pump() {
   if (processing) return;
   const job = jobs.find(j => j.state === "queued");
-  if (!job) { setStatus("ready"); renderAll(); return; }
+  if (!job) { setUiStatus("ready"); renderAll(); return; }
   processing = true;
-  try { await runJob(job); } catch (e) { job.state = "error"; job.err = e.message || "Error"; toast(job.err, "err"); }
+  try { await runJob(job); } catch (e) { job.state = "error"; job.err = e.message || tr("processingFailed"); toast(job.err, "err"); }
   finally { processing = false; renderAll(); pump(); }
 }
 async function runJob(job) {
   const t0 = performance.now();
   let st = await getStatus(job.model);
-  if (st.state !== "ready") { job.state = "loading-model"; renderAll(); setStatus(`downloading ${job.model}…`, true); await waitForModel(job.model); }
-  job.state = "processing"; renderAll(); setStatus("processing…", true);
+  if (st.state !== "ready") { job.state = "loading-model"; renderAll(); setUiStatus("downloadingModel", true, localizedModelInfo(job.model).title || job.model); await waitForModel(job.model); }
+  job.state = "processing"; renderAll(); setUiStatus("processing", true);
   const fd = new FormData(); fd.append("image", job.file); fd.append("model", job.model);
   // A one-off reprocess with a non-default model: keep the global pinned model alive.
   if (job.transient || job.model !== selectedModel) fd.append("transient", "true");
   if ($("am-enabled").checked) { fd.append("alpha_matting", "true"); fd.append("alpha_matting_foreground_threshold", $("am-fg").value); fd.append("alpha_matting_background_threshold", $("am-bg").value); fd.append("alpha_matting_erode_size", $("am-erode").value); }
   const r = await fetch("/remove", { method: "POST", body: fd });
-  if (!r.ok) { let d = "Server error"; try { d = (await r.json()).detail || d; } catch {} throw new Error(d); }
+  if (!r.ok) { let d = tr("serverError"); try { d = (await r.json()).detail || d; } catch {} throw new Error(d); }
   const blob = await r.blob();
   job.originalOutBlob = blob; job.blackForeground = false;
   if (job.outUrl) URL.revokeObjectURL(job.outUrl);
@@ -540,7 +651,7 @@ async function runJob(job) {
   persistJob(job);
 }
 function reprocessJob(job, newModel) {
-  if (!confirm(`Reprocess "${job.name}" with ${INFO[newModel]?.title || newModel}?\n\nThis replaces the current result for this image.`)) return;
+  if (!confirm(tr("reprocessConfirm", job.name, localizedModelInfo(newModel).title || newModel))) return;
   job.model = newModel; job.state = "queued"; job.err = null; job.blackForeground = false; job.originalOutBlob = null;
   // Per-image override: load the model but do not steal the pinned default.
   job.transient = newModel !== selectedModel;
@@ -551,7 +662,7 @@ function reprocessJob(job, newModel) {
 // ===================== Export ============================================
 function makeImg(url, alt) {
   const img = document.createElement("img"); img.alt = alt;
-  img.addEventListener("error", () => { const d = document.createElement("div"); d.className = "errmsg"; d.innerHTML = ICON_WARN + " Asset unavailable"; if (img.parentNode) img.replaceWith(d); });
+  img.addEventListener("error", () => { const d = document.createElement("div"); d.className = "errmsg"; d.innerHTML = ICON_WARN + " " + tr("assetUnavailable"); if (img.parentNode) img.replaceWith(d); });
   img.src = url || ""; if (!url) img.dispatchEvent(new Event("error")); return img;
 }
 function enablePreviewZoom(cell, img, job, side) {
@@ -573,7 +684,7 @@ function enablePreviewZoom(cell, img, job, side) {
   }
   img.draggable = false;
   img.style.transformOrigin = "center center";
-  img.title = "Scroll over image to zoom; drag to pan; double-click to reset";
+  img.title = tr("zoomTooltip");
   applyTransform();
   cell.addEventListener("wheel", (e) => {
     if (!img.contains(e.target)) return;
@@ -636,17 +747,17 @@ async function blackenForeground(blob) {
     const pixels = ctx.getImageData(0, 0, cv.width, cv.height);
     for (let i = 0; i < pixels.data.length; i += 4) if (pixels.data[i + 3] > 0) pixels.data[i] = pixels.data[i + 1] = pixels.data[i + 2] = 0;
     ctx.putImageData(pixels, 0, 0);
-    return await new Promise((resolve, reject) => cv.toBlob((out) => out ? resolve(out) : reject(new Error("Could not create black silhouette PNG")), "image/png"));
+    return await new Promise((resolve, reject) => cv.toBlob((out) => out ? resolve(out) : reject(new Error(tr("couldNotCreatePng"))), "image/png"));
   } finally { URL.revokeObjectURL(sourceUrl); }
 }
 async function setBlackForeground(job, enabled) {
   if (enabled === job.blackForeground) return;
   if (enabled) {
     job.originalOutBlob = job.originalOutBlob || job.outBlob;
-    if (!job.originalOutBlob) throw new Error("Original image is unavailable");
+    if (!job.originalOutBlob) throw new Error(tr("originalUnavailable"));
     job.outBlob = await blackenForeground(job.originalOutBlob);
   } else {
-    if (!job.originalOutBlob) throw new Error("Original color result is unavailable");
+    if (!job.originalOutBlob) throw new Error(tr("originalColorUnavailable"));
     job.outBlob = job.originalOutBlob;
   }
   job.blackForeground = enabled;
@@ -673,8 +784,27 @@ async function exportJob(job, format) {
 $("download-all").addEventListener("click", async () => { const fmt = $("dl-format").value; for (const job of jobs.filter(j => j.sessionId === viewedSessionId && j.state === "done")) { await exportJob(job, fmt); await sleep(250); } });
 
 // ===================== Render ============================================
-const BADGE_TEXT = { queued: "Queued", "loading-model": "Downloading model…", processing: "Processing…", done: "Done", error: "Error" };
+function badgeText(state) {
+  return {
+    queued: tr("queued"),
+    "loading-model": tr("downloadingState"),
+    processing: tr("processing"),
+    done: tr("done"),
+    error: tr("error")
+  }[state] || tr("error");
+}
 function renderAll() { renderResults(); renderSidebar(); }
+
+$("language-select").value = locale;
+$("language-select").addEventListener("change", (event) => {
+  locale = event.target.value === "ja" ? "ja" : "en";
+  try { localStorage.setItem("rbl-language", locale); } catch {}
+  applyLanguage();
+  renderAll();
+  renderModelDropdown();
+  renderModelsPage();
+  if (overlay.classList.contains("show")) showOverlay(DEFAULT_MODEL);
+});
 
 function renderResults() {
   const el = $("results");
@@ -684,14 +814,14 @@ function renderResults() {
   for (let i = jobs.length - 1; i >= 0; i--) { const j = jobs[i]; if (j.sessionId === viewedSessionId && !j.hidden) el.appendChild(renderCard(j)); }
   const empty = $("results-empty");
   empty.style.display = visible.length ? "none" : "flex";
-  $("empty-text").textContent = inView.length ? "All cards closed. Click an image in the sidebar to reopen it." : "Nothing here yet. Drop an image to remove its background.";
+  $("empty-text").textContent = inView.length ? tr("emptyClosed") : tr("emptyDrop");
   const done = inView.filter(j => j.state === "done").length;
   const pending = inView.filter(j => ["queued", "processing", "loading-model"].includes(j.state)).length;
   $("download-all").disabled = done === 0;
   const closeAll = $("close-all");
   closeAll.disabled = inView.length === 0;
-  closeAll.textContent = (inView.length && visible.length === 0) ? "Show all" : "Close all";
-  $("queue-info").textContent = (done ? `${done} processed` : "") + (pending ? `${done ? " · " : ""}${pending} in queue` : "");
+  closeAll.textContent = (inView.length && visible.length === 0) ? tr("showAll") : tr("closeAll");
+  $("queue-info").textContent = (done ? tr("processedCount", done) : "") + (pending ? `${done ? " · " : ""}${tr("inQueue", pending)}` : "");
 }
 $("close-all").addEventListener("click", () => {
   const inView = jobs.filter(j => j.sessionId === viewedSessionId);
@@ -704,52 +834,52 @@ $("close-all").addEventListener("click", () => {
 function renderCard(job) {
   const card = document.createElement("div"); card.className = "card"; card.id = "card-" + job.id;
   const head = document.createElement("div"); head.className = "card-head";
-  const modelTitle = INFO[job.model]?.title || job.model;
-  const metaLine = job.state === "done" ? `${modelTitle} · processed <span class="ago" data-ts="${job.createdAt}">${timeAgo(job.createdAt)}</span>` : modelTitle;
+  const modelTitle = localizedModelInfo(job.model).title || job.model;
+  const metaLine = job.state === "done" ? `${modelTitle} · ${tr("processedAgo")} <span class="ago" data-ts="${job.createdAt}">${timeAgo(job.createdAt)}</span>` : modelTitle;
   const metaRight = job.state === "done" ? `<span class="meta">${job.outKB} KB · ${job.ms}s</span>` : "";
-  head.innerHTML = `<span class="ci-left"><span class="name" title="${job.name}">${job.name}</span><span class="cmeta">${metaLine}</span></span><span class="right">${metaRight}<span class="badge ${job.state}">${BADGE_TEXT[job.state]}</span><button class="card-close icon-btn" title="Close from view">${ICON_CLOSE}</button></span>`;
+  head.innerHTML = `<span class="ci-left"><span class="name" title="${job.name}">${job.name}</span><span class="cmeta">${metaLine}</span></span><span class="right">${metaRight}<span class="badge ${job.state}">${badgeText(job.state)}</span><button class="card-close icon-btn" title="${tr("closeCard")}">${ICON_CLOSE}</button></span>`;
   head.querySelector(".card-close").addEventListener("click", () => hideJob(job.id));
   card.appendChild(head);
 
   const pair = document.createElement("div"); pair.className = "pair";
   const inCell = document.createElement("div"); inCell.className = "cell checker";
-  inCell.innerHTML = `<span class="label">Original</span>`; const inputPreview = makeImg(job.inUrl, "Original"); enablePreviewZoom(inCell, inputPreview, job, "input"); inCell.appendChild(inputPreview); pair.appendChild(inCell);
+  inCell.innerHTML = `<span class="label">${tr("original")}</span>`; const inputPreview = makeImg(job.inUrl, tr("original")); enablePreviewZoom(inCell, inputPreview, job, "input"); inCell.appendChild(inputPreview); pair.appendChild(inCell);
   const outCell = document.createElement("div"); outCell.className = "cell out";
   const eff = effectiveBg(job); if ($("white-preview-bg").checked) outCell.style.background = "#ffffff"; else if (eff === "checker") outCell.classList.add("checker"); else outCell.style.background = eff;
-  outCell.innerHTML = `<span class="label">No background</span>`;
-  if (job.state === "done") { const outputPreview = makeImg(job.outUrl, "No background"); enablePreviewZoom(outCell, outputPreview, job, "output"); outCell.appendChild(outputPreview); }
-  else if (job.state === "error") { const d = document.createElement("div"); d.className = "errmsg"; d.textContent = job.err || "Error"; outCell.appendChild(d); }
-  else if (job.state === "queued") { const d = document.createElement("div"); d.className = "placeholder"; d.textContent = "Waiting…"; outCell.appendChild(d); }
+  outCell.innerHTML = `<span class="label">${tr("noBackground")}</span>`;
+  if (job.state === "done") { const outputPreview = makeImg(job.outUrl, tr("noBackground")); enablePreviewZoom(outCell, outputPreview, job, "output"); outCell.appendChild(outputPreview); }
+  else if (job.state === "error") { const d = document.createElement("div"); d.className = "errmsg"; d.textContent = job.err || tr("error"); outCell.appendChild(d); }
+  else if (job.state === "queued") { const d = document.createElement("div"); d.className = "placeholder"; d.textContent = tr("waiting"); outCell.appendChild(d); }
   else { const s = document.createElement("div"); s.className = "spinner"; outCell.appendChild(s); }
   pair.appendChild(outCell); card.appendChild(pair);
 
   if (job.state === "done") {
     const foot = document.createElement("div"); foot.className = "card-foot";
     const bgGrp = document.createElement("div"); bgGrp.className = "grp";
-    const lbl = document.createElement("span"); lbl.className = "glbl"; lbl.textContent = "Background:"; bgGrp.appendChild(lbl);
+    const lbl = document.createElement("span"); lbl.className = "glbl"; lbl.textContent = tr("background"); bgGrp.appendChild(lbl);
     buildSwatches(bgGrp, job.bg != null ? job.bg : "__none__", (bg) => { job.bg = bg; persistJob(job); renderResults(); }, true);
     foot.appendChild(bgGrp);
 
     const mGrp = document.createElement("div"); mGrp.className = "grp";
-    const mLbl = document.createElement("span"); mLbl.className = "glbl"; mLbl.textContent = "Model:"; mGrp.appendChild(mLbl);
+    const mLbl = document.createElement("span"); mLbl.className = "glbl"; mLbl.textContent = tr("model"); mGrp.appendChild(mLbl);
     const mSel = document.createElement("select");
-    for (const [k, inf] of Object.entries(INFO)) { const o = document.createElement("option"); o.value = k; o.textContent = inf.title; if (k === job.model) o.selected = true; mSel.appendChild(o); }
-    const reBtn = document.createElement("button"); reBtn.textContent = "Reprocess";
+    for (const [k, inf] of Object.entries(INFO)) { const o = document.createElement("option"); o.value = k; o.textContent = localizedModelInfo(k).title; if (k === job.model) o.selected = true; mSel.appendChild(o); }
+    const reBtn = document.createElement("button"); reBtn.textContent = tr("reprocess");
     reBtn.addEventListener("click", () => reprocessJob(job, mSel.value));
     mGrp.appendChild(mSel); mGrp.appendChild(reBtn); foot.appendChild(mGrp);
 
     const silhouetteGrp = document.createElement("div"); silhouetteGrp.className = "grp";
-    const silhouetteBtn = document.createElement("button"); silhouetteBtn.textContent = job.blackForeground ? "Restore color" : "Make black silhouette";
+    const silhouetteBtn = document.createElement("button"); silhouetteBtn.textContent = job.blackForeground ? tr("restoreColor") : tr("blackSilhouette");
     silhouetteBtn.disabled = job.blackForeground && !job.originalOutBlob;
     silhouetteBtn.addEventListener("click", async () => {
       silhouetteBtn.disabled = true;
-      try { await setBlackForeground(job, !job.blackForeground); } catch (e) { toast(e.message || "Could not change result", "err"); renderResults(); }
+      try { await setBlackForeground(job, !job.blackForeground); } catch (e) { toast(e.message || tr("couldNotMakeSilhouette"), "err"); renderResults(); }
     });
     silhouetteGrp.appendChild(silhouetteBtn); foot.appendChild(silhouetteGrp);
 
     const dlGrp = document.createElement("div"); dlGrp.className = "grp";
     const sel = document.createElement("select"); sel.innerHTML = `<option value="png">PNG</option><option value="webp">WEBP</option><option value="jpg">JPG</option>`;
-    const btn = document.createElement("button"); btn.className = "primary"; btn.textContent = "Download";
+    const btn = document.createElement("button"); btn.className = "primary"; btn.textContent = tr("download");
     btn.addEventListener("click", () => exportJob(job, sel.value));
     dlGrp.appendChild(sel); dlGrp.appendChild(btn); foot.appendChild(dlGrp);
     card.appendChild(foot);
@@ -761,10 +891,10 @@ function renderSidebar() {
   const list = $("sidebar-list");
   list.innerHTML = "";
   if (!jobs.length) {
-    const e = document.createElement("div"); e.className = "sidebar-empty"; e.innerHTML = "No images yet.<br>Drop some to start.";
+    const e = document.createElement("div"); e.className = "sidebar-empty"; e.innerHTML = tr("noImages");
     list.appendChild(e); $("sess-leg").textContent = ""; return;
   }
-  $("sess-leg").textContent = "* open session";
+  $("sess-leg").textContent = tr("openSession");
   const ordered = [...sessions].sort((a, b) => b.createdAt - a.createdAt);
   for (const sess of ordered) {
     const sjobs = jobs.filter(j => j.sessionId === sess.id);
@@ -772,8 +902,8 @@ function renderSidebar() {
     const group = document.createElement("div"); group.className = "sess-group";
     const head = document.createElement("div"); head.className = "sess-head" + (sess.id === viewedSessionId ? " viewed" : "");
     const isCur = sess.id === currentSessionId;
-    head.innerHTML = `<span class="sess-name"><b>${isCur ? "Current" : "Session"}</b> · <span class="ago" data-ts="${sess.createdAt}">${timeAgo(sess.createdAt)}</span> · ${sjobs.length}</span>`;
-    const sdel = document.createElement("button"); sdel.className = "sess-del icon-btn"; sdel.title = "Delete session"; sdel.innerHTML = ICON_TRASH;
+    head.innerHTML = `<span class="sess-name"><b>${isCur ? tr("current") : tr("session")}</b> · <span class="ago" data-ts="${sess.createdAt}">${timeAgo(sess.createdAt)}</span> · ${sjobs.length}</span>`;
+    const sdel = document.createElement("button"); sdel.className = "sess-del icon-btn"; sdel.title = tr("deleteSession"); sdel.innerHTML = ICON_TRASH;
     sdel.addEventListener("click", (e) => { e.stopPropagation(); deleteSession(sess.id); });
     head.appendChild(sdel);
     head.addEventListener("click", () => { viewedSessionId = sess.id; renderAll(); });
@@ -785,9 +915,9 @@ function renderSidebar() {
       if (job.inUrl) { const im = document.createElement("img"); im.src = job.inUrl; im.alt = ""; im.addEventListener("error", () => thumb.innerHTML = ICON_WARN); thumb.appendChild(im); }
       else thumb.innerHTML = ICON_WARN;
       const meta = document.createElement("div"); meta.className = "side-meta";
-      const sub = job.state === "done" ? `<span class="ago" data-ts="${job.createdAt}">${timeAgo(job.createdAt)}</span>` : BADGE_TEXT[job.state];
+      const sub = job.state === "done" ? `<span class="ago" data-ts="${job.createdAt}">${timeAgo(job.createdAt)}</span>` : badgeText(job.state);
       meta.innerHTML = `<div class="side-name" title="${job.name}">${job.name}</div><div class="side-sub ${job.state}">${sub}</div>`;
-      const d = document.createElement("button"); d.className = "side-del icon-btn"; d.title = "Delete image"; d.innerHTML = ICON_TRASH;
+      const d = document.createElement("button"); d.className = "side-del icon-btn"; d.title = tr("deleteImage"); d.innerHTML = ICON_TRASH;
       d.addEventListener("click", (e) => { e.stopPropagation(); deleteJob(job.id); });
       item.appendChild(thumb); item.appendChild(meta); item.appendChild(d);
       item.addEventListener("click", () => revealJob(job.id));
@@ -826,26 +956,26 @@ function deleteSession(id) {
 function startNewSession() { const s = { id: genId(), createdAt: Date.now() }; sessions.push(s); currentSessionId = s.id; viewedSessionId = s.id; renderAll(); }
 $("new-session").addEventListener("click", () => {
   const curEmpty = !jobs.some(j => j.sessionId === currentSessionId);
-  if (curEmpty) { viewedSessionId = currentSessionId; renderAll(); toast("Current session is already empty"); return; }
-  startNewSession(); toast("New session started");
+  if (curEmpty) { viewedSessionId = currentSessionId; renderAll(); toast(tr("currentSessionEmpty")); return; }
+  startNewSession(); toast(tr("newSessionStarted"));
 });
 
 // ===================== Install overlay ===================================
 const overlay = $("overlay"), installBox = $("install-box");
-function showOverlay(model) { installBox.classList.remove("error"); $("install-retry").style.display = "none"; $("install-title").textContent = "Setting up rm.background local"; $("install-msg").innerHTML = `Downloading the <span class="em">${INFO[model]?.title || model}</span> model (~<span class="em">${SIZES[model]} MB</span>) for the first time…`; overlay.classList.add("show"); }
+function showOverlay(model) { installBox.classList.remove("error"); $("install-retry").style.display = "none"; $("install-title").textContent = tr("settingUp"); const modelName = localizedModelInfo(model).title || model; $("install-msg").innerHTML = tr("downloadingModelFirst", `<span class="em">${modelName}</span>`, `<span class="em">${SIZES[model]} MB</span>`); overlay.classList.add("show"); }
 function hideOverlay() { overlay.classList.remove("show"); }
-function updateOverlay(s) { const pct = Math.round(((s.progress != null ? s.progress : 0)) * 100); $("install-bar").style.width = pct + "%"; $("install-sub").textContent = (s.progress != null && s.progress < 1) ? `Downloading… ${pct}%` : "Initializing model…"; }
-function overlayError(msg) { installBox.classList.add("error"); $("install-title").textContent = "Could not download the model"; $("install-msg").textContent = msg + ". Check your internet connection and try again."; $("install-retry").style.display = "inline-block"; }
+function updateOverlay(s) { const pct = Math.round(((s.progress != null ? s.progress : 0)) * 100); $("install-bar").style.width = pct + "%"; $("install-sub").textContent = (s.progress != null && s.progress < 1) ? tr("downloadPercent", pct) : tr("initializingModel"); }
+function overlayError(msg) { installBox.classList.add("error"); $("install-title").textContent = tr("modelDownloadError"); $("install-msg").textContent = tr("retryNetwork", msg); $("install-retry").style.display = "inline-block"; }
 $("install-retry").addEventListener("click", () => initInstall());
 async function initInstall() {
   try {
     const s = await getStatus(DEFAULT_MODEL);
-    if (s.state === "ready") { hideOverlay(); setStatus("ready"); return; }
-    showOverlay(DEFAULT_MODEL); setStatus("downloading model…", true);
+    if (s.state === "ready") { hideOverlay(); setUiStatus("ready"); return; }
+    showOverlay(DEFAULT_MODEL); setUiStatus("downloadingState", true);
     await waitForModel(DEFAULT_MODEL, updateOverlay);
     DOWNLOADED[DEFAULT_MODEL] = true; renderModelDropdown(); renderModelsPage();
-    hideOverlay(); setStatus("ready"); toast("Model ready — drop an image to start", "ok");
-  } catch (e) { overlayError(e.message || "Download error"); setStatus("model error"); }
+    hideOverlay(); setUiStatus("ready"); toast(tr("modelReady"), "ok");
+  } catch (e) { overlayError(e.message || tr("downloadError")); setUiStatus("modelError"); }
 }
 
 // ===================== Boot ==============================================
@@ -871,7 +1001,7 @@ async function restoreFromIDB() {
     await restoreFromIDB();
     startNewSession();          // fresh empty working session; past sessions stay in the sidebar
     await initInstall();
-  } catch (e) { setStatus("server error"); toast("Could not reach the server", "err"); }
+  } catch (e) { setUiStatus("serverError"); toast(tr("serverUnreachable"), "err"); }
 })();
 </script>
 
