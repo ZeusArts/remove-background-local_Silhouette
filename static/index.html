@@ -71,6 +71,7 @@
   .field-label { font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
   .toprow { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 10px 0 14px; flex-wrap: wrap; }
   .toprow .dd { flex: 1 1 320px; max-width: 440px; }
+  .model-scope { display: block; margin: 0 0 4px 2px; color: var(--text-dim); font-size: 12px; }
   .btns { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   select, button { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 7px 11px; font-size: 13px; font-family: inherit; cursor: pointer; }
   select:hover, button:hover { border-color: var(--accent); }
@@ -243,6 +244,7 @@
     <div class="fixed-top">
       <div class="toprow">
         <div class="dd" id="model-dd">
+          <span class="model-scope" data-i18n="newImageModel">Model for new images:</span>
           <button class="dd-trigger" id="model-trigger">
             <span class="t-main"><span class="t-title" id="t-title">…</span><span class="t-tag" id="t-tag"></span></span>
             <span class="chev"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
@@ -263,7 +265,6 @@
         <input type="file" id="file" accept="image/*" multiple style="display:none" />
       </div>
 
-      <div class="bg-picker" id="global-bg"><span class="lbl" data-i18n="defaultBackground">Default result background:</span></div>
       <div style="margin-top:8px;font-size:12px;color:var(--text-dim)"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="preview-bg-only" /> <span data-i18n="previewBackgroundOnly">Preview background only (not included in downloads)</span></label></div>
 
       <details>
@@ -336,7 +337,7 @@ const I18N = {
     language: "Language", sessions: "Sessions", newSession: "New session", sidebarEmpty: "No images yet.<br>Drop some to start.",
     downloadAll: "Download all", downloadFormat: "Download format", closeAll: "Close all", showAll: "Show all",
     dropImages: "Drag images here", dropHint: "or click to select · several at once · paste with Cmd/Ctrl+V (PNG, JPG, WEBP · max 30 MB each)",
-    defaultBackground: "Default result background:", previewBackgroundOnly: "Preview background only (not included in downloads)",
+    newImageModel: "Model for new images:", previewBackgroundOnly: "Preview background only (not included in downloads)",
     advancedOptions: "Advanced options (alpha matting)", enableMatting: "Enable alpha matting (better for hair / fine edges, slower)",
     fgThreshold: "FG threshold", bgThreshold: "BG threshold", erode: "Erode", emptyInitial: "Processed images will appear here.",
     modelsTitle: "Models", modelsLead: "Every model removes backgrounds, but they trade off speed and quality differently. You can pre-download any of them here; the one you use is downloaded automatically the first time.",
@@ -355,7 +356,7 @@ const I18N = {
     couldNotMakeSilhouette: "Could not change result", couldNotCreatePng: "Could not create black silhouette PNG", originalUnavailable: "Original image is unavailable",
     originalColorUnavailable: "Original color result is unavailable", emptyClosed: "All cards closed. Click an image in the sidebar to reopen it.",
     emptyDrop: "Nothing here yet. Drop an image to remove its background.", processedCount: "{0} processed", inQueue: "{0} in queue",
-    processedAgo: "processed", original: "Original", noBackground: "No background", waiting: "Waiting…", background: "Background:", model: "Model:",
+    processedAgo: "processed", original: "Original", noBackground: "No background", waiting: "Waiting…", background: "Background:", model: "Reprocess with:",
     reprocess: "Reprocess", restoreColor: "Restore color", blackSilhouette: "Make black silhouette", downloadingState: "Downloading model…", done: "Done", error: "Error", queued: "Queued",
     current: "Current", session: "Session", openSession: "* open session", deleteSession: "Delete session", deleteImage: "Delete image",
     currentSessionEmpty: "Current session is already empty", newSessionStarted: "New session started", allCardsClosed: "Close all", closeCard: "Close from view", noImages: "No images yet.<br>Drop some to start.",
@@ -370,7 +371,7 @@ const I18N = {
     language: "言語", sessions: "セッション", newSession: "新しいセッション", sidebarEmpty: "画像はまだありません。<br>画像をドロップしてください。",
     downloadAll: "すべてダウンロード", downloadFormat: "ダウンロード形式", closeAll: "すべて閉じる", showAll: "すべて表示",
     dropImages: "ここに画像をドラッグ", dropHint: "クリックして選択 · 複数選択可 · Cmd/Ctrl+Vで貼り付け（PNG、JPG、WEBP · 1枚最大30 MB）",
-    defaultBackground: "保存画像の背景色：", previewBackgroundOnly: "プレビュー背景のみ（ダウンロード画像には反映しない）",
+    newImageModel: "新しい画像に使うモデル：", previewBackgroundOnly: "プレビュー背景のみ（ダウンロード画像には反映しない）",
     advancedOptions: "詳細設定（アルファマッティング）", enableMatting: "アルファマッティングを有効化（髪や細い輪郭を改善しますが、処理が遅くなります）",
     fgThreshold: "前景しきい値", bgThreshold: "背景しきい値", erode: "収縮量", emptyInitial: "処理した画像がここに表示されます。",
     modelsTitle: "モデル", modelsLead: "モデルによって処理速度と品質が異なります。ここで事前にダウンロードできます。選択したモデルは初回使用時に自動でダウンロードされます。",
@@ -389,7 +390,7 @@ const I18N = {
     couldNotMakeSilhouette: "画像を変更できませんでした", couldNotCreatePng: "黒いシルエットPNGを作成できませんでした", originalUnavailable: "元画像を利用できません",
     originalColorUnavailable: "元のカラー画像を利用できません", emptyClosed: "すべてのカードを閉じました。サイドバーの画像をクリックすると再表示できます。",
     emptyDrop: "画像はまだありません。背景を削除する画像をドロップしてください。", processedCount: "{0}件処理済み", inQueue: "{0}件待機中",
-    processedAgo: "処理", original: "元画像", noBackground: "背景削除後", waiting: "待機中…", background: "背景色：", model: "モデル：",
+    processedAgo: "処理", original: "元画像", noBackground: "背景削除後", waiting: "待機中…", background: "背景色：", model: "再処理に使うモデル：",
     reprocess: "再処理", restoreColor: "カラーに戻す", blackSilhouette: "黒いシルエットにする", downloadingState: "モデルをダウンロード中…", done: "完了", error: "エラー", queued: "待機中",
     current: "現在", session: "セッション", openSession: "* 表示中のセッション", deleteSession: "セッションを削除", deleteImage: "画像を削除",
     currentSessionEmpty: "現在のセッションは空です", newSessionStarted: "新しいセッションを開始しました", allCardsClosed: "すべて閉じる", closeCard: "一覧から閉じる", noImages: "画像はまだありません。<br>画像をドロップしてください。",
@@ -448,7 +449,6 @@ const SWATCHES = [
 
 let MODELS = {}, SIZES = {}, INFO = {}, DOWNLOADED = {}, DEFAULT_MODEL = null;
 let selectedModel = null;
-let resultBg = "checker";
 let jobs = [];                 // all jobs across sessions (persisted)
 let sessions = [];             // [{id, createdAt}]
 let currentSessionId = null;   // session new uploads go to
@@ -600,8 +600,7 @@ function buildSwatches(container, current, onPick, small) {
   const inp = document.createElement("input"); inp.type = "color"; inp.value = (current && current.startsWith && current.startsWith("#")) ? current : "#ff8800";
   inp.addEventListener("input", (e) => onPick(e.target.value)); custom.appendChild(inp); container.appendChild(custom);
 }
-function buildGlobalSwatches() { buildSwatches($("global-bg"), resultBg, (bg) => { resultBg = bg; buildGlobalSwatches(); renderResults(); }, false); }
-function effectiveBg(job) { return job.bg != null ? job.bg : resultBg; }
+function effectiveBg(job) { return job.bg != null ? job.bg : "checker"; }
 $("preview-bg-only").addEventListener("change", () => renderResults());
 
 // ===================== Drag & drop / paste ===============================
@@ -995,7 +994,6 @@ async function restoreFromIDB() {
 }
 (async function boot() {
   try {
-    buildGlobalSwatches();
     await loadModels();
     try { const h = await (await fetch("/health")).json(); if (h.version) $("ver").textContent = "v" + h.version; } catch {}
     await restoreFromIDB();
