@@ -143,9 +143,9 @@
 
   .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); }
   @media (max-width: 640px) { .pair { grid-template-columns: 1fr; } }
-  .cell { min-height: 220px; display: flex; align-items: center; justify-content: center; position: relative; padding: 10px; }
+  .cell { min-height: 220px; display: flex; align-items: center; justify-content: center; position: relative; padding: 10px; overflow: hidden; }
   .cell.checker { background: linear-gradient(45deg, var(--checker-b) 25%, transparent 25%), linear-gradient(-45deg, var(--checker-b) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, var(--checker-b) 75%), linear-gradient(-45deg, transparent 75%, var(--checker-b) 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, 10px 0; background-color: var(--checker-a); }
-  .cell img { max-width: 100%; max-height: 320px; display: block; }
+  .cell img { max-width: 100%; max-height: 320px; display: block; transform: translate(0px, 0px) scale(1); transform-origin: center center; will-change: transform; user-select: none; -webkit-user-drag: none; touch-action: none; }
   .cell .label { position: absolute; top: 8px; left: 10px; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-dim); background: rgba(15,15,18,0.6); padding: 2px 6px; border-radius: 4px; }
   .cell .placeholder { color: var(--text-dim); font-size: 12px; }
   .cell .errmsg { color: var(--err); font-size: 12px; text-align: center; padding: 0 14px; }
@@ -262,6 +262,7 @@
       </div>
 
       <div class="bg-picker" id="global-bg"><span class="lbl">Default result background:</span></div>
+      <div style="margin-top:8px;font-size:12px;color:var(--text-dim)"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="white-preview-bg" /> White preview background only (not included in downloads)</label></div>
 
       <details>
         <summary>Advanced options (alpha matting)</summary>
@@ -369,7 +370,7 @@ async function idbClear() { const db = await idbOpen(); return new Promise((res,
 async function idbAll() { const db = await idbOpen(); return new Promise((res, rej) => { const tx = db.transaction(STORE, "readonly"); const rq = tx.objectStore(STORE).getAll(); rq.onsuccess = () => res(rq.result || []); rq.onerror = () => rej(rq.error); }); }
 async function persistJob(job) {
   if (job.state !== "done" || !job.inBlob || !job.outBlob) return;
-  try { await idbPut({ id: job.id, sessionId: job.sessionId, sessionCreatedAt: sessionCreatedAt(job.sessionId), createdAt: job.createdAt, name: job.name, model: job.model, ms: job.ms, outKB: job.outKB, bg: job.bg, inBlob: job.inBlob, outBlob: job.outBlob }); } catch {}
+  try { await idbPut({ id: job.id, sessionId: job.sessionId, sessionCreatedAt: sessionCreatedAt(job.sessionId), createdAt: job.createdAt, name: job.name, model: job.model, ms: job.ms, outKB: job.outKB, bg: job.bg, blackForeground: !!job.blackForeground, inBlob: job.inBlob, outBlob: job.outBlob, originalOutBlob: job.originalOutBlob || job.outBlob }); } catch {}
 }
 
 // ===================== Toast / status ====================================
@@ -490,6 +491,7 @@ function buildSwatches(container, current, onPick, small) {
 }
 function buildGlobalSwatches() { buildSwatches($("global-bg"), resultBg, (bg) => { resultBg = bg; buildGlobalSwatches(); renderResults(); }, false); }
 function effectiveBg(job) { return job.bg != null ? job.bg : resultBg; }
+$("white-preview-bg").addEventListener("change", () => renderResults());
 
 // ===================== Drag & drop / paste ===============================
 const drop = $("drop"), fileInput = $("file");
@@ -530,6 +532,7 @@ async function runJob(job) {
   const r = await fetch("/remove", { method: "POST", body: fd });
   if (!r.ok) { let d = "Server error"; try { d = (await r.json()).detail || d; } catch {} throw new Error(d); }
   const blob = await r.blob();
+  job.originalOutBlob = blob; job.blackForeground = false;
   if (job.outUrl) URL.revokeObjectURL(job.outUrl);
   job.outBlob = blob; job.outUrl = URL.createObjectURL(blob); job.outKB = (blob.size / 1024).toFixed(0);
   job.ms = r.headers.get("X-Processing-Time") || ((performance.now() - t0) / 1000).toFixed(2);
@@ -538,7 +541,7 @@ async function runJob(job) {
 }
 function reprocessJob(job, newModel) {
   if (!confirm(`Reprocess "${job.name}" with ${INFO[newModel]?.title || newModel}?\n\nThis replaces the current result for this image.`)) return;
-  job.model = newModel; job.state = "queued"; job.err = null;
+  job.model = newModel; job.state = "queued"; job.err = null; job.blackForeground = false; job.originalOutBlob = null;
   // Per-image override: load the model but do not steal the pinned default.
   job.transient = newModel !== selectedModel;
   if (job.outUrl) { URL.revokeObjectURL(job.outUrl); job.outUrl = null; } job.outBlob = null; job.ms = null; job.outKB = null;
@@ -551,7 +554,107 @@ function makeImg(url, alt) {
   img.addEventListener("error", () => { const d = document.createElement("div"); d.className = "errmsg"; d.innerHTML = ICON_WARN + " Asset unavailable"; if (img.parentNode) img.replaceWith(d); });
   img.src = url || ""; if (!url) img.dispatchEvent(new Event("error")); return img;
 }
+function enablePreviewZoom(cell, img, job, side) {
+  job.previewZoom = job.previewZoom || { input: 1, output: 1 };
+  job.previewPan = job.previewPan || { input: { x: 0, y: 0 }, output: { x: 0, y: 0 } };
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  function clampPan(x, y, zoom) {
+    const availableWidth = Math.max(0, cell.clientWidth - 20);
+    const availableHeight = Math.max(0, cell.clientHeight - 20);
+    const maxX = Math.max(0, (img.offsetWidth * zoom - availableWidth) / 2);
+    const maxY = Math.max(0, (img.offsetHeight * zoom - availableHeight) / 2);
+    return { x: clamp(x, -maxX, maxX), y: clamp(y, -maxY, maxY) };
+  }
+  function applyTransform() {
+    const zoom = job.previewZoom[side] || 1;
+    const pan = job.previewPan[side] || { x: 0, y: 0 };
+    img.style.transform = "translate(" + pan.x + "px, " + pan.y + "px) scale(" + zoom + ")";
+    img.style.cursor = zoom > 1 ? "grab" : "zoom-in";
+  }
+  img.draggable = false;
+  img.style.transformOrigin = "center center";
+  img.title = "Scroll over image to zoom; drag to pan; double-click to reset";
+  applyTransform();
+  cell.addEventListener("wheel", (e) => {
+    if (!img.contains(e.target)) return;
+    e.preventDefault();
+    const oldZoom = job.previewZoom[side] || 1;
+    const nextZoom = clamp(oldZoom * Math.exp(-e.deltaY * 0.0012), 1, 8);
+    const rect = cell.getBoundingClientRect();
+    const pointX = e.clientX - (rect.left + rect.width / 2);
+    const pointY = e.clientY - (rect.top + rect.height / 2);
+    const oldPan = job.previewPan[side] || { x: 0, y: 0 };
+    const nextPan = nextZoom === 1
+      ? { x: 0, y: 0 }
+      : clampPan(
+          pointX - ((pointX - oldPan.x) / oldZoom) * nextZoom,
+          pointY - ((pointY - oldPan.y) / oldZoom) * nextZoom,
+          nextZoom
+        );
+    job.previewZoom[side] = nextZoom;
+    job.previewPan[side] = nextPan;
+    applyTransform();
+  }, { passive: false });
+  let drag = null;
+  img.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0 || (job.previewZoom[side] || 1) <= 1) return;
+    e.preventDefault();
+    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, panX: job.previewPan[side].x, panY: job.previewPan[side].y };
+    img.setPointerCapture(e.pointerId);
+    img.style.cursor = "grabbing";
+  });
+  img.addEventListener("pointermove", (e) => {
+    if (!drag || drag.id !== e.pointerId) return;
+    const zoom = job.previewZoom[side] || 1;
+    job.previewPan[side] = clampPan(drag.panX + e.clientX - drag.x, drag.panY + e.clientY - drag.y, zoom);
+    applyTransform();
+    img.style.cursor = "grabbing";
+  });
+  function endDrag(e) {
+    if (!drag || drag.id !== e.pointerId) return;
+    drag = null;
+    if (img.hasPointerCapture(e.pointerId)) img.releasePointerCapture(e.pointerId);
+    applyTransform();
+  }
+  img.addEventListener("pointerup", endDrag);
+  img.addEventListener("pointercancel", endDrag);
+  img.addEventListener("lostpointercapture", () => { drag = null; applyTransform(); });
+  img.addEventListener("dblclick", (e) => {
+    e.preventDefault();
+    job.previewZoom[side] = 1;
+    job.previewPan[side] = { x: 0, y: 0 };
+    applyTransform();
+  });
+}
 function loadImage(url) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; }); }
+async function blackenForeground(blob) {
+  const sourceUrl = URL.createObjectURL(blob);
+  try {
+    const img = await loadImage(sourceUrl);
+    const cv = document.createElement("canvas"); cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+    const ctx = cv.getContext("2d", { willReadFrequently: true }); ctx.drawImage(img, 0, 0);
+    const pixels = ctx.getImageData(0, 0, cv.width, cv.height);
+    for (let i = 0; i < pixels.data.length; i += 4) if (pixels.data[i + 3] > 0) pixels.data[i] = pixels.data[i + 1] = pixels.data[i + 2] = 0;
+    ctx.putImageData(pixels, 0, 0);
+    return await new Promise((resolve, reject) => cv.toBlob((out) => out ? resolve(out) : reject(new Error("Could not create black silhouette PNG")), "image/png"));
+  } finally { URL.revokeObjectURL(sourceUrl); }
+}
+async function setBlackForeground(job, enabled) {
+  if (enabled === job.blackForeground) return;
+  if (enabled) {
+    job.originalOutBlob = job.originalOutBlob || job.outBlob;
+    if (!job.originalOutBlob) throw new Error("Original image is unavailable");
+    job.outBlob = await blackenForeground(job.originalOutBlob);
+  } else {
+    if (!job.originalOutBlob) throw new Error("Original color result is unavailable");
+    job.outBlob = job.originalOutBlob;
+  }
+  job.blackForeground = enabled;
+  if (job.outUrl) URL.revokeObjectURL(job.outUrl);
+  job.outUrl = URL.createObjectURL(job.outBlob); job.outKB = (job.outBlob.size / 1024).toFixed(0);
+  await persistJob(job);
+  renderAll();
+}
 async function exportJob(job, format) {
   if (!job.outUrl) return;
   const eff = effectiveBg(job); const img = await loadImage(job.outUrl);
@@ -564,7 +667,7 @@ async function exportJob(job, format) {
   const ext = format === "jpg" ? "jpg" : format;
   const blob = await new Promise(r => cv.toBlob(r, mime, format === "png" ? undefined : 0.92));
   const url = URL.createObjectURL(blob); const a = document.createElement("a");
-  a.href = url; a.download = job.name.replace(/\.[^.]+$/, "") + "_nobg." + ext; a.click();
+  a.href = url; a.download = job.name.replace(/\.[^.]+$/, "") + (job.blackForeground ? "_black-silhouette." : "_nobg.") + ext; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 $("download-all").addEventListener("click", async () => { const fmt = $("dl-format").value; for (const job of jobs.filter(j => j.sessionId === viewedSessionId && j.state === "done")) { await exportJob(job, fmt); await sleep(250); } });
@@ -610,11 +713,11 @@ function renderCard(job) {
 
   const pair = document.createElement("div"); pair.className = "pair";
   const inCell = document.createElement("div"); inCell.className = "cell checker";
-  inCell.innerHTML = `<span class="label">Original</span>`; inCell.appendChild(makeImg(job.inUrl, "Original")); pair.appendChild(inCell);
+  inCell.innerHTML = `<span class="label">Original</span>`; const inputPreview = makeImg(job.inUrl, "Original"); enablePreviewZoom(inCell, inputPreview, job, "input"); inCell.appendChild(inputPreview); pair.appendChild(inCell);
   const outCell = document.createElement("div"); outCell.className = "cell out";
-  const eff = effectiveBg(job); if (eff === "checker") outCell.classList.add("checker"); else outCell.style.background = eff;
+  const eff = effectiveBg(job); if ($("white-preview-bg").checked) outCell.style.background = "#ffffff"; else if (eff === "checker") outCell.classList.add("checker"); else outCell.style.background = eff;
   outCell.innerHTML = `<span class="label">No background</span>`;
-  if (job.state === "done") outCell.appendChild(makeImg(job.outUrl, "No background"));
+  if (job.state === "done") { const outputPreview = makeImg(job.outUrl, "No background"); enablePreviewZoom(outCell, outputPreview, job, "output"); outCell.appendChild(outputPreview); }
   else if (job.state === "error") { const d = document.createElement("div"); d.className = "errmsg"; d.textContent = job.err || "Error"; outCell.appendChild(d); }
   else if (job.state === "queued") { const d = document.createElement("div"); d.className = "placeholder"; d.textContent = "Waiting…"; outCell.appendChild(d); }
   else { const s = document.createElement("div"); s.className = "spinner"; outCell.appendChild(s); }
@@ -634,6 +737,15 @@ function renderCard(job) {
     const reBtn = document.createElement("button"); reBtn.textContent = "Reprocess";
     reBtn.addEventListener("click", () => reprocessJob(job, mSel.value));
     mGrp.appendChild(mSel); mGrp.appendChild(reBtn); foot.appendChild(mGrp);
+
+    const silhouetteGrp = document.createElement("div"); silhouetteGrp.className = "grp";
+    const silhouetteBtn = document.createElement("button"); silhouetteBtn.textContent = job.blackForeground ? "Restore color" : "Make black silhouette";
+    silhouetteBtn.disabled = job.blackForeground && !job.originalOutBlob;
+    silhouetteBtn.addEventListener("click", async () => {
+      silhouetteBtn.disabled = true;
+      try { await setBlackForeground(job, !job.blackForeground); } catch (e) { toast(e.message || "Could not change result", "err"); renderResults(); }
+    });
+    silhouetteGrp.appendChild(silhouetteBtn); foot.appendChild(silhouetteGrp);
 
     const dlGrp = document.createElement("div"); dlGrp.className = "grp";
     const sel = document.createElement("select"); sel.innerHTML = `<option value="png">PNG</option><option value="webp">WEBP</option><option value="jpg">JPG</option>`;
@@ -746,7 +858,7 @@ async function restoreFromIDB() {
     try {
       const sid = rec.sessionId || "legacy";
       if (!sessMap[sid]) sessMap[sid] = rec.sessionCreatedAt || rec.createdAt;
-      jobs.push({ id: rec.id, sessionId: sid, createdAt: rec.createdAt, name: rec.name, model: rec.model, state: "done", ms: rec.ms, outKB: rec.outKB, bg: rec.bg != null ? rec.bg : null, inBlob: rec.inBlob, outBlob: rec.outBlob, file: rec.inBlob, inUrl: URL.createObjectURL(rec.inBlob), outUrl: URL.createObjectURL(rec.outBlob), err: null, hidden: false });
+      jobs.push({ id: rec.id, sessionId: sid, createdAt: rec.createdAt, name: rec.name, model: rec.model, blackForeground: rec.blackForeground === true, state: "done", ms: rec.ms, outKB: rec.outKB, bg: rec.bg != null ? rec.bg : null, inBlob: rec.inBlob, outBlob: rec.outBlob, originalOutBlob: rec.originalOutBlob || (rec.blackForeground ? null : rec.outBlob), file: rec.inBlob, inUrl: URL.createObjectURL(rec.inBlob), outUrl: URL.createObjectURL(rec.outBlob), err: null, hidden: false });
     } catch {}
   }
   sessions = Object.entries(sessMap).map(([id, createdAt]) => ({ id, createdAt }));

@@ -217,7 +217,7 @@ function pkgVersion() { try { return require(path.join(APP_DIR, "package.json"))
 
 function ensureElectron() {
   const desktopDir = path.join(HOME, "desktop");
-  const electronBin = path.join(desktopDir, "node_modules", ".bin", IS_WIN ? "electron.cmd" : "electron");
+  const electronBin = IS_WIN ? path.join(desktopDir, "node_modules", "electron", "dist", "electron.exe") : path.join(desktopDir, "node_modules", ".bin", "electron");
   if (!fs.existsSync(electronBin)) {
     log("Installing the desktop runtime (Electron) the first time...");
     fs.mkdirSync(desktopDir, { recursive: true });
