@@ -17,7 +17,7 @@
   html, body { height: 100%; }
   body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-  .app-header { flex: 0 0 var(--header-h); padding: 0 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: flex-start; gap: 10px; background: var(--panel); z-index: 30; }
+  .app-header { flex: 0 0 auto; min-height: var(--header-h); padding: 6px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: flex-start; gap: 10px; flex-wrap: wrap; background: var(--panel); z-index: 30; }
   .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .status { font-size: 12px; color: var(--text-dim); display: flex; align-items: center; gap: 6px; min-width: 120px; justify-content: flex-end; }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); transition: background 0.2s; }
@@ -26,6 +26,9 @@
   .nav-tab:hover { color: var(--text); border-color: var(--border); }
   .nav-tab.active { color: var(--text); background: var(--panel-2); border-color: var(--border); }
   .language-select { padding: 5px 8px; font-size: 12px; }
+  .app-header .dd { flex: 0 1 280px; max-width: 300px; min-width: 180px; }
+  .app-header .model-scope { margin: 0 0 2px 2px; font-size: 10px; white-space: nowrap; }
+  .app-header .btns { margin-left: 0; }
   .icon-btn { display: inline-flex; align-items: center; justify-content: center; }
   .icon-btn svg { display: block; }
 
@@ -68,7 +71,6 @@
   .fixed-top { flex: 0 0 auto; padding: 14px 20px 12px; border-bottom: 1px solid var(--border); background: var(--bg); }
   .field-label { font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
   .toprow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; gap: 12px; margin: 0 0 12px; }
-  .toprow .dd { width: 100%; max-width: none; min-width: 0; }
   .model-scope { display: block; margin: 0 0 4px 2px; color: var(--text-dim); font-size: 12px; }
   .btns { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
   .format-control { display: flex; align-items: center; gap: 5px; }
@@ -107,6 +109,8 @@
   .drop-zone p { margin: 4px 0; color: var(--text-dim); }
   .drop-zone .big { font-size: 15px; color: var(--text); font-weight: 500; }
   .drop-zone .hint { font-size: 12px; }
+  .top-options { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+  .preview-bg-option { margin: 0; font-size: 12px; color: var(--text-dim); }
 
   details { margin-top: 10px; font-size: 13px; }
   details summary { cursor: pointer; color: var(--text-dim); }
@@ -212,7 +216,7 @@
   .install-box button { margin-top: 16px; }
 
   @media (max-width: 860px) { .sidebar { display: none; } }
-  @media (max-width: 820px) { .app-header { gap: 5px; padding: 0 8px; } .nav-tab { padding: 6px 8px; } .btns { gap: 4px; } .btns button, .format-control select { padding-left: 6px; padding-right: 6px; } .format-control { gap: 3px; } }
+  @media (max-width: 820px) { .app-header { gap: 5px; padding: 6px 8px; } .nav-tab { padding: 6px 8px; } .btns { gap: 4px; } .btns button, .format-control select { padding-left: 6px; padding-right: 6px; } .format-control { gap: 3px; } }
 </style>
 </head>
 <body>
@@ -224,6 +228,14 @@
     <button class="nav-tab" data-view="models" data-i18n="navModels">Models</button>
   </nav>
   <select id="language-select" class="language-select" aria-label="Language" title="Language"><option value="en">English</option><option value="ja">日本語</option></select>
+  <div class="dd" id="model-dd">
+    <span class="model-scope" data-i18n="newImageModel">Model for new images:</span>
+    <button class="dd-trigger" id="model-trigger">
+      <span class="t-main"><span class="t-title" id="t-title">…</span><span class="t-tag" id="t-tag"></span></span>
+      <span class="chev"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+    </button>
+    <div class="dd-menu" id="model-menu" hidden></div>
+  </div>
   <div class="btns">
     <button id="download-all" disabled data-i18n="downloadAll">Download all</button>
     <div class="format-control"><label for="dl-format" data-i18n="fileFormat">File Format</label><select id="dl-format" title="File Format" data-i18n-title="fileFormat"><option value="png">PNG</option><option value="webp">WEBP</option><option value="jpg">JPG</option></select></div>
@@ -249,32 +261,24 @@
   <div class="workarea">
     <div class="fixed-top">
       <div class="toprow">
-        <div class="dd" id="model-dd">
-          <span class="model-scope" data-i18n="newImageModel">Model for new images:</span>
-          <button class="dd-trigger" id="model-trigger">
-            <span class="t-main"><span class="t-title" id="t-title">…</span><span class="t-tag" id="t-tag"></span></span>
-            <span class="chev"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
-          </button>
-          <div class="dd-menu" id="model-menu" hidden></div>
-        </div>
         <div class="drop-zone" id="drop">
           <p class="big" data-i18n="dropImages">Drag images here</p>
           <p class="hint" data-i18n="dropHint">or click to select · several at once · paste with Cmd/Ctrl+V (PNG, JPG, WEBP · max 30 MB each)</p>
           <input type="file" id="file" accept="image/*" multiple style="display:none" />
         </div>
-      </div>
-
-      <div style="margin-top:8px;font-size:12px;color:var(--text-dim)"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="preview-bg-only" /> <span data-i18n="previewBackgroundOnly">Preview background only (not included in downloads)</span></label></div>
-
-      <details>
-        <summary data-i18n="advancedOptions">Advanced options (alpha matting)</summary>
-        <div class="row">
-          <label class="toggle"><input type="checkbox" id="am-enabled" /> <span data-i18n="enableMatting">Enable alpha matting (better for hair / fine edges, slower)</span></label>
-          <label><span data-i18n="fgThreshold">FG threshold</span> <input type="number" id="am-fg" value="240" min="0" max="255" /></label>
-          <label><span data-i18n="bgThreshold">BG threshold</span> <input type="number" id="am-bg" value="10" min="0" max="255" /></label>
-          <label><span data-i18n="erode">Erode</span> <input type="number" id="am-erode" value="10" min="0" max="50" /></label>
+        <div class="top-options">
+          <div class="preview-bg-option"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="preview-bg-only" /> <span data-i18n="previewBackgroundOnly">Preview background only (not included in downloads)</span></label></div>
+          <details>
+            <summary data-i18n="advancedOptions">Advanced options (alpha matting)</summary>
+            <div class="row">
+              <label class="toggle"><input type="checkbox" id="am-enabled" /> <span data-i18n="enableMatting">Enable alpha matting (better for hair / fine edges, slower)</span></label>
+              <label><span data-i18n="fgThreshold">FG threshold</span> <input type="number" id="am-fg" value="240" min="0" max="255" /></label>
+              <label><span data-i18n="bgThreshold">BG threshold</span> <input type="number" id="am-bg" value="10" min="0" max="255" /></label>
+              <label><span data-i18n="erode">Erode</span> <input type="number" id="am-erode" value="10" min="0" max="50" /></label>
+            </div>
+          </details>
         </div>
-      </details>
+      </div>
     </div>
 
     <div class="results" id="results">
